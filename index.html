@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bitácora</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <div class="app">
+
+    <!-- ===== Pantalla: Proyectos ===== -->
+    <main class="screen" id="screen-proyectos">
+      <header class="screen-header">
+        <div>
+          <h1>Tus proyectos</h1>
+          <p class="subtitle" id="pendientes-hoy">3 pendientes hoy</p>
+        </div>
+        <span class="badge badge-level">Niv.4</span>
+      </header>
+
+      <div class="streak-pill">
+        <span class="streak-number">7</span> días de racha de constancia
+      </div>
+
+      <section class="project-list" id="project-list">
+
+        <article class="project-card">
+          <div class="project-card-header">
+            <span class="project-name">IA</span>
+            <span class="project-points">40 / 40 pts</span>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-fill progress-green" style="width: 100%"></div>
+          </div>
+          <ul class="task-list">
+            <li class="task done">Video Benj. Cordero</li>
+            <li class="task done">Crear Agentes Claude</li>
+          </ul>
+        </article>
+
+        <article class="project-card">
+          <div class="project-card-header">
+            <span class="project-name">Python</span>
+            <span class="project-points">30 / 50 pts</span>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-fill progress-orange" style="width: 60%"></div>
+          </div>
+          <ul class="task-list">
+            <li class="task done">Estudiar Python — fundamentos</li>
+            <li class="task-group">
+              <div class="task-group-header">
+                <span>Data with Baraa</span>
+                <span class="task-group-count">1 / 2</span>
+              </div>
+              <ul class="subtask-list">
+                <li class="subtask done">Módulo 1</li>
+                <li class="subtask">
+                  Módulo 2
+                  <span class="subtask-meta">vence 26 ago</span>
+                </li>
+              </ul>
+            </li>
+          </ul>
+        </article>
+
+        <article class="project-card">
+          <div class="project-card-header">
+            <span class="project-name">App</span>
+            <span class="project-status">sin actividad</span>
+          </div>
+        </article>
+
+      </section>
+    </main>
+
+    <!-- ===== Navegación inferior ===== -->
+    <nav class="bottom-nav">
+      <button class="nav-item active" data-screen="proyectos">
+        <span class="nav-icon">☰</span>
+        <span>Proyectos</span>
+      </button>
+      <button class="nav-item" data-screen="agenda">
+        <span class="nav-icon">📅</span>
+        <span>Agenda</span>
+      </button>
+      <button class="nav-item" data-screen="perfil">
+        <span class="nav-icon">👤</span>
+        <span>Perfil</span>
+      </button>
+    </nav>
+
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
