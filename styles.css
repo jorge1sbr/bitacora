@@ -104,7 +104,7 @@ body {
   font-size: 15px;
 }
 
-.project-points {
+.project-count {
   font-size: 13px;
   color: var(--text-secondary);
 }
@@ -253,4 +253,55 @@ body {
 
 .nav-icon {
   font-size: 18px;
+}
+
+.agenda-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.event-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+}
+
+.event-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 6px;
+}
+
+.event-time {
+  font-weight: 600;
+  font-size: 18px;
+}
+
+.event-duration {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.event-title {
+  font-size: 14px;
+  color: var(--text-primary);
+  margin-bottom: 10px;
+}
+
+.event-alarm {
+  font-size: 12px;
+  font-weight: 600;
+  display: inline-block;
+}
+
+.event-alarm.active {
+  color: var(--orange);
+}
+
+.event-alarm.inactive {
+  color: var(--text-muted);
+  font-weight: 400;
 }

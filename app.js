@@ -1,15 +1,18 @@
 // Fase 1: todavía sin lógica de datos (localStorage vendrá en el siguiente paso).
-// Por ahora solo dejamos la navegación preparada para cuando existan
-// las pantallas de Agenda y Perfil.
+// Por ahora, cambio de pantalla mostrando/ocultando cada sección.
 
 document.querySelectorAll('.nav-item').forEach((btn) => {
   btn.addEventListener('click', () => {
+    const targetScreen = btn.dataset.screen; // ej. "proyectos", "agenda", "perfil"
+
+    // Actualiza el estado visual de la navegación
     document.querySelectorAll('.nav-item').forEach((b) => b.classList.remove('active'));
     btn.classList.add('active');
 
-    const screen = btn.dataset.screen;
-    if (screen !== 'proyectos') {
-      console.log(`Pantalla "${screen}" aún no está construida.`);
-    }
+    // Oculta todas las pantallas y muestra solo la seleccionada
+    document.querySelectorAll('.screen').forEach((screen) => {
+      const isTarget = screen.id === `screen-${targetScreen}`;
+      screen.hidden = !isTarget;
+    });
   });
 });
