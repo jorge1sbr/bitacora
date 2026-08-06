@@ -1,6 +1,89 @@
-// Fase 1: todavía sin lógica de datos (localStorage vendrá en el siguiente paso).
-// Por ahora, cambio de pantalla mostrando/ocultando cada sección.
+const PROYECTOS_RAIZ = [
+  {
+    id: 'ia',
+    nombre: 'IA',
+    tareas: [
+      { id: 't1', texto: 'Video Benj. Cordero', hecha: true },
+      { id: 't2', texto: 'Crear Agentes Claude', hecha: true }
+    ]
+  },
+  {
+    id: 'python',
+    nombre: 'Python',
+    tareas: [
+      { id: 't3', texto: 'Estudiar Python — fundamentos', hecha: true },
+      { id: 't4', texto: 'Data with Baraa — Módulo 1', hecha: true },
+      { id: 't5', texto: 'Data with Baraa — Módulo 2', hecha: false }
+    ]
+  },
+  {
+    id: 'app',
+    nombre: 'App',
+    tareas: []
+  }
+];
 
+//Guardo los proyectos como texto en localStorage
+function saveProjects(projects){
+  const texto = JSON.stringify(projects);
+  localStorage.setItem('bitacora_projects', texto)
+
+}
+
+//Convierto el  textoen json de nuevo 
+function getProjects() {
+  const texto = localStorage.getItem('bitacora_projects');
+
+  if (texto == null){
+    //Si no hay nada guardado todavía 
+    saveProjects(PROYECTOS_RAIZ);
+    return PROYECTOS_RAIZ;
+  }
+
+  const projects = JSON.parse(texto)
+  return projects;
+}
+
+//Pintar los proyectos en pantaalla
+function mostrarProjects(){
+  const projects = getProjects();
+  const contenedor = document.getElementById('project-list');
+  
+  contenedor.innerHTML = ''; // vaciamos el HTML fijo de antes
+
+  projects.forEach((proyecto) => {
+    const totalTareas = proyecto.tareas.length; 
+    const tareasHechas = proyecto.tareas.filter((tarea) => tarea.hecha).length;
+    const porcentje = totalTareas === 0 ? 0 : (tareasHechas / totalTareas) * 100; // si es 0--> 0, si es !0 --> ()*100
+
+    const listaTareasHtml = proyecto.tareas.map((tarea) => {
+        const claseHecha = tarea.hecha ? 'done' : '';
+        return `<li class="task ${claseHecha}" data-task-id="${tarea.id}">${tarea.texto}</li>`;
+      })
+      .join('');
+
+
+  const html = `
+  <article class="project-card">
+    <div class="project-card-header">
+      <span class="project-name">${proyecto.nombre}</span>
+      <span class="project-count">${tareasHechas} / ${totalTareas} tareas</span>
+    </div>
+    <div class="progress-bar">
+      <div class="progress-fill progress-green" style="width: ${porcentje}%"></div>
+    </div>
+    <ul class="task-list">
+      ${listaTareasHtml}
+    </ul>
+  </article>
+`;
+
+contenedor.innerHTML += html;
+  });
+}
+
+
+// Por ahora, cambio de pantalla mostrando/ocultando cada sección.
 document.querySelectorAll('.nav-item').forEach((btn) => {
   btn.addEventListener('click', () => {
     const targetScreen = btn.dataset.screen; // ej. "proyectos", "agenda", "perfil"
