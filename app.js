@@ -56,11 +56,16 @@ function mostrarProjects(){
     const tareasHechas = proyecto.tareas.filter((tarea) => tarea.hecha).length;
     const porcentje = totalTareas === 0 ? 0 : (tareasHechas / totalTareas) * 100; // si es 0--> 0, si es !0 --> ()*100
 
-    const listaTareasHtml = proyecto.tareas.map((tarea) => {
-        const claseHecha = tarea.hecha ? 'done' : '';
-        return `<li class="task ${claseHecha}" data-task-id="${tarea.id}">${tarea.texto}</li>`;
-      })
-      .join('');
+  const listaTareasHtml = proyecto.tareas.map((tarea) => {
+    const claseHecha = tarea.hecha ? 'done' : '';
+    return `
+      <li class="task ${claseHecha}" data-task-id="${tarea.id}">
+        <span class="task-checkbox"></span>
+        <span class="task-text">${tarea.texto}</span>
+      </li>
+    `;
+  })
+  .join('');
 
 
   const html = `
@@ -83,6 +88,69 @@ contenedor.innerHTML += html;
 }
 
 
+// ===== Detectar clic en una tarea =====
+document.getElementById('project-list').addEventListener('click',(event) =>{
+  //Si el click es en elcheckbox: marcar/desmarcar
+  const checkbox = event.target.closest('.task-checkbox');
+  if (checkbox != null){
+    const li = checkbox.closest('.task');
+    marcarTarea(li.dataset.taskId);
+    return;
+  }
+
+  //Si el click es en el texto: editar
+  const textoTarea = event.target.closest('.task-text');
+  if (textoTarea !== null){
+    const li = textoTarea.closest('.task');
+    editarTarea(li.dataset.taskId);
+    return;
+  }
+}
+)
+
+// Marca/desmarca una tarea como hecha
+function marcarTarea(taskId){
+  const projects = getProjects();
+
+  projects.forEach((proyecto) => {
+    proyecto.tareas.forEach((tarea) =>{
+      if (tarea.id === taskId){
+        tarea.hecha = !tarea.hecha;
+      }
+    });
+  });
+
+  saveProjects(projects);
+  mostrarProjects();
+
+}
+
+//Editar texto  detareas
+function editarTarea(taskId){
+  const projects = getProjects();
+  let tareaEncontrada = null;
+
+  projects.forEach((proyecto)=>{
+    proyecto.tareas.forEach((tarea) =>{
+      if (tarea.id === taskId) {
+        tareaEncontrada = tarea
+      }
+    });
+  });
+
+  if(tareaEncontrada === null) return;
+
+  const nuevoTexto = prompt('Editar tarea:', tareaEncontrada.texto);
+
+  if(nuevoTexto === null || nuevoTexto.trim() === ''){
+    return;
+  }
+
+  tareaEncontrada.texto = nuevoTexto.trim();
+  saveProjects(projects);
+  mostrarProjects();
+}
+
 // Por ahora, cambio de pantalla mostrando/ocultando cada sección.
 document.querySelectorAll('.nav-item').forEach((btn) => {
   btn.addEventListener('click', () => {
@@ -99,3 +167,5 @@ document.querySelectorAll('.nav-item').forEach((btn) => {
     });
   });
 });
+
+mostrarProjects();
