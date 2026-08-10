@@ -23,14 +23,55 @@ const PROYECTOS_RAIZ = [
   }
 ];
 
-//Guardo los proyectos como texto en localStorage
+const EVENTOS_RAIZ = [
+  {
+    id: 'e1',
+    hora: '09:00',
+    titulo: 'Estudiar Python — Módulo 2',
+    duracion: '45 min',
+    alarma: '08:55'
+  },
+  {
+    id: 'e2',
+    hora: '11:30',
+    titulo: 'Grabar video — Benj. Cordero',
+    duracion: '1h',
+    alarma: null
+  },
+  {
+    id: 'e3',
+    hora: '17:00',
+    titulo: 'Bocetar pantallas de la App',
+    duracion: '30 min',
+    alarma: null
+  },
+  {
+    id: 'e4',
+    hora: '20:30',
+    titulo: 'Repaso — Data with Baraa',
+    duracion: '30 min',
+    alarma: '20:25'
+  },
+  {
+    id: 'e5',
+    hora: null,
+    titulo: 'Revisar notas del curso',
+    duracion: null,
+    alarma: null
+  }
+];
+
+
+//===================== PROYECTOS ===================
+
+//Proyectos guardados como texto en localStorage
 function saveProjects(projects){
   const texto = JSON.stringify(projects);
   localStorage.setItem('bitacora_projects', texto)
 
 }
 
-//Convierto el  textoen json de nuevo 
+//Texto a json de nuevo 
 function getProjects() {
   const texto = localStorage.getItem('bitacora_projects');
 
@@ -43,6 +84,7 @@ function getProjects() {
   const projects = JSON.parse(texto)
   return projects;
 }
+
 
 //Pintar los proyectos en pantaalla
 function mostrarProjects(){
@@ -151,6 +193,58 @@ function editarTarea(taskId){
   mostrarProjects();
 }
 
+
+//============ AGENDA =========
+//Eventos como texto en localStorage
+function saveEventos(eventos) {
+  const texto = JSON.stringify(eventos);
+  localStorage.setItem('bitacora_eventos', texto);
+}
+
+function getEventos(){
+  const texto = localStorage.getItem('bitacora_eventos');
+
+  if(texto == null){
+    saveEventos(EVENTOS_RAIZ);
+    return EVENTOS_RAIZ;
+  }
+
+  const eventos = JSON.parse(texto);
+  return eventos;
+}
+
+//
+function mostrarEventos(){
+  const eventos = getEventos();
+  const contenedor = document.getElementById('agenda-list');
+
+  contenedor.innerHTML = '';
+
+  eventos.forEach((evento) =>{
+    const tieneAlarma = evento.alarma !== null;
+    const iconoAlarma = tieneAlarma ? `<span class="alarm-icon">🔔</span>` : '';
+
+    const textoHora = evento.hora !== null ? evento.hora : '';
+    const textoDuracion = evento.duracion !== null ? evento.duracion : '';
+
+    const html = `
+      <article class="event-card" data-event-id="${evento.id}">
+        <div class="event-card-header">
+          <span class="event-time-group">
+            <span class="event-time">${textoHora}</span>
+            <span class="event-duration">${textoDuracion}</span>
+          </span>
+          ${iconoAlarma}
+        </div>
+        <p class="event-title">${evento.titulo}</p>
+      </article>
+    `;
+
+    contenedor.innerHTML += html;
+  })
+}
+
+
 // Por ahora, cambio de pantalla mostrando/ocultando cada sección.
 document.querySelectorAll('.nav-item').forEach((btn) => {
   btn.addEventListener('click', () => {
@@ -169,3 +263,4 @@ document.querySelectorAll('.nav-item').forEach((btn) => {
 });
 
 mostrarProjects();
+mostrarEventos();

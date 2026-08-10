@@ -257,3 +257,80 @@ body {
 .nav-icon {
   font-size: 18px;
 }
+
+.agenda-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.event-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+}
+
+.event-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 6px;
+}
+
+.event-time {
+  font-weight: 600;
+  font-size: 18px;
+}
+
+.event-duration {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+
+.event-time-group {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.alarm-icon {
+  font-size: 13px;
+  filter: grayscale(1) opacity(0.6);
+}
+
+.event-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.stat-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  text-align: center;
+}
+
+.stat-value {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.stat-label {
+  font-size: 11px;
+  color: var(--text-secondary);
+}
