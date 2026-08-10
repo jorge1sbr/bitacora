@@ -145,7 +145,7 @@ body {
   align-items: center;
   gap: 10px;
   font-size: 13px;
-  color: var(--text-secondary);
+  color: var(--text-primary); /* pendiente: destaca */
 }
 
 .task-checkbox {
@@ -167,61 +167,30 @@ body {
 }
 
 .task.done .task-text {
-  color: var(--text-primary);
+  color: var(--text-muted); /* hecha: se apaga, llama menos la atención */
 }
 
-.task-group-header {
-  display: flex;
-  justify-content: space-between;
-  font-size: 13px;
-  color: var(--text-primary);
-  margin-bottom: 6px;
+/* ===== Carpetas dentro de un proyecto (variante C) ===== */
+
+.task-folder {
+  margin-top: 10px;
 }
 
-.task-group-count {
+.folder-count {
+  font-weight: 400;
   color: var(--text-secondary);
+  font-size: 12px;
 }
 
-.subtask-list {
+.subtask-list-new {
   list-style: none;
+  border-left: 2px solid var(--border);
   padding-left: 12px;
+  margin-left: 1px;
   display: flex;
   flex-direction: column;
   gap: 6px;
-}
-
-.subtask {
-  font-size: 12px;
-  color: var(--text-secondary);
-  padding-left: 18px;
-  position: relative;
-  display: flex;
-  justify-content: space-between;
-}
-
-.subtask::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 3px;
-  width: 10px;
-  height: 10px;
-  border-radius: 3px;
-  border: 1.5px solid var(--text-muted);
-}
-
-.subtask.done {
-  color: var(--text-primary);
-}
-
-.subtask.done::before {
-  background: var(--green);
-  border-color: var(--green);
-}
-
-.subtask-meta {
-  color: var(--orange);
-  font-size: 11px;
+  margin-bottom: 10px;
 }
 
 .bottom-nav {
@@ -287,7 +256,6 @@ body {
   font-size: 13px;
   color: var(--text-secondary);
 }
-
 
 .event-time-group {
   display: flex;

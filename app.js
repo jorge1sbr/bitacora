@@ -3,17 +3,24 @@ const PROYECTOS_RAIZ = [
     id: 'ia',
     nombre: 'IA',
     tareas: [
-      { id: 't1', texto: 'Video Benj. Cordero', hecha: true },
-      { id: 't2', texto: 'Crear Agentes Claude', hecha: true }
+      { id: 't1', tipo: 'tarea', texto: 'Video Benj. Cordero', hecha: true },
+      { id: 't2', tipo: 'tarea', texto: 'Crear Agentes Claude', hecha: true }
     ]
   },
   {
     id: 'python',
     nombre: 'Python',
     tareas: [
-      { id: 't3', texto: 'Estudiar Python — fundamentos', hecha: true },
-      { id: 't4', texto: 'Data with Baraa — Módulo 1', hecha: true },
-      { id: 't5', texto: 'Data with Baraa — Módulo 2', hecha: false }
+      { id: 't3', tipo: 'tarea', texto: 'Estudiar Python — fundamentos', hecha: true },
+      {
+        id: 'c1',
+        tipo: 'carpeta',
+        nombre: 'Data with Baraa',
+        tareas: [
+          { id: 't4', tipo: 'tarea', texto: 'Módulo 1', hecha: true },
+          { id: 't5', tipo: 'tarea', texto: 'Módulo 2', hecha: false }
+        ]
+      }
     ]
   },
   {
@@ -85,6 +92,56 @@ function getProjects() {
   return projects;
 }
 
+// Cuenta tareas totales y hechas de una lista, incluyendo las que están dentro de carpetas
+function contarTareas(items){
+  let total = 0;
+  let hechas = 0;
+
+  items.forEach((item) =>{
+    if(item.tipo === 'tarea'){
+      total++;
+      if(item.hecha){
+        hechas++;
+      }
+    } else if (item.tipo === 'carpeta'){
+      const resultado = contarTareas(item.tareas); // se llama a sí misma con las tareas de dentro de la carpeta
+      total += resultado.total;
+      hechas += resultado.hechas;
+    }
+  });
+    return { total, hechas};
+}
+
+function generarItemHtml(item){
+  if(item.tipo === 'tarea'){
+    const claseHecha = item.hecha ? 'done' : '';
+    return `
+      <li class="task ${claseHecha}" data-task-id="${item.id}">
+        <span class="task-text">${item.texto}</span>
+        <span class="task-checkbox"></span>
+      </li>
+    `;
+  }
+
+  if (item.tipo === 'carpeta'){
+    const conteo = contarTareas(item.tareas);
+    const todoHecho = conteo.total > 0 && conteo.hechas == conteo.total;
+    const claseHecha = todoHecho ? 'done' : '';
+
+    const subitemsHtml =item.tareas.map(generarItemHtml).join('');
+
+    return `
+      <li class="task task-folder ${claseHecha}" data-folder-id="${item.id}">
+        <span class="task-text">${item.nombre} <span class="folder-count">${conteo.hechas}/${conteo.total}</span> 📁</span>
+        <span class="task-checkbox"></span>
+      </li>
+      <ul class="subtask-list-new">
+        ${subitemsHtml}
+      </ul>
+    `;
+
+  }
+}
 
 //Pintar los proyectos en pantaalla
 function mostrarProjects(){
@@ -94,38 +151,28 @@ function mostrarProjects(){
   contenedor.innerHTML = ''; // vaciamos el HTML fijo de antes
 
   projects.forEach((proyecto) => {
-    const totalTareas = proyecto.tareas.length; 
-    const tareasHechas = proyecto.tareas.filter((tarea) => tarea.hecha).length;
-    const porcentje = totalTareas === 0 ? 0 : (tareasHechas / totalTareas) * 100; // si es 0--> 0, si es !0 --> ()*100
+    const conteo = contarTareas(proyecto.tareas);
+    const porcentaje = conteo.total === 0 ? 0 : (conteo.hechas / conteo.total) * 100;
 
-  const listaTareasHtml = proyecto.tareas.map((tarea) => {
-    const claseHecha = tarea.hecha ? 'done' : '';
-    return `
-      <li class="task ${claseHecha}" data-task-id="${tarea.id}">
-        <span class="task-checkbox"></span>
-        <span class="task-text">${tarea.texto}</span>
-      </li>
+    const listaTareasHtml  = proyecto.tareas.map(generarItemHtml).join('');
+
+    const html = `
+      <article class="project-card">
+        <div class="project-card-header">
+          <span class="project-name">${proyecto.nombre}</span>
+          <span class="project-count">${conteo.hechas} / ${conteo.total} tareas</span>
+        </div>
+        <div class="progress-bar">
+          <div class="progress-fill progress-green" style="width: ${porcentaje}%"></div>
+        </div>
+        <ul class="task-list">
+          ${listaTareasHtml}
+        </ul>
+      </article>
     `;
-  })
-  .join('');
 
+    contenedor.innerHTML += html;
 
-  const html = `
-  <article class="project-card">
-    <div class="project-card-header">
-      <span class="project-name">${proyecto.nombre}</span>
-      <span class="project-count">${tareasHechas} / ${totalTareas} tareas</span>
-    </div>
-    <div class="progress-bar">
-      <div class="progress-fill progress-green" style="width: ${porcentje}%"></div>
-    </div>
-    <ul class="task-list">
-      ${listaTareasHtml}
-    </ul>
-  </article>
-`;
-
-contenedor.innerHTML += html;
   });
 }
 
