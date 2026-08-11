@@ -64,6 +64,24 @@ body {
   color: var(--orange);
 }
 
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.badge-add {
+  background: var(--green);
+  color: var(--bg);
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.badge-add:hover {
+  opacity: 0.85;
+}
+
 .streak-pill {
   background: var(--bg-card-alt);
   border-radius: 999px;
@@ -205,6 +223,21 @@ body {
 
 .add-task-btn:hover {
   color: var(--green);
+}
+
+.delete-task-btn {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 0;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+}
+
+.delete-task-btn:hover {
+  color: var(--orange);
 }
 
 .bottom-nav {

@@ -119,6 +119,11 @@ function generarItemHtml(item){
       <li class="task ${claseHecha}" data-task-id="${item.id}">
         <span class="task-text">${item.texto}</span>
         <span class="task-checkbox"></span>
+        <button class="delete-task-btn" data-task-id="${item.id}">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6h16Z"/>
+          </svg>
+        </button>
       </li>
     `;
   }
@@ -178,7 +183,7 @@ function mostrarProjects(){
 }
 
 
-// ===== Detectar clic en una tarea =====
+// ===== Funcionamiento de bootones y =====
 document.getElementById('project-list').addEventListener('click',(event) =>{
   //Si el click es en elcheckbox: marcar/desmarcar
   const checkbox = event.target.closest('.task-checkbox');
@@ -188,7 +193,6 @@ document.getElementById('project-list').addEventListener('click',(event) =>{
     return;
   }
 
-  //Si el click es en el texto: editar
   const textoTarea = event.target.closest('.task-text');
   if (textoTarea !== null){
     const li = textoTarea.closest('.task');
@@ -198,7 +202,7 @@ document.getElementById('project-list').addEventListener('click',(event) =>{
 }
 )
 
-// ===== Detectar clic en "Añadir tarea" =====
+//Detectar clic en "Añadir tarea"
 document.getElementById('project-list').addEventListener('click', (event) => {
   const boton = event.target.closest('.add-task-btn');
   if (boton === null) return;
@@ -206,6 +210,17 @@ document.getElementById('project-list').addEventListener('click', (event) => {
   addTarea(boton.dataset.projectId);
 });
 
+//Detectar clic en "borrar tarea" 
+document.getElementById('project-list').addEventListener('click', (event) => {
+  const boton = event.target.closest('.delete-task-btn');
+  if (boton === null) return;
+
+  borrarTarea(boton.dataset.taskId);
+});
+//Detectar clic en "+ Proyecto"
+document.getElementById('add-project-btn').addEventListener('click', () => {
+  addProyecto();
+});
 
 // Marca/desmarca una tarea como hecha
 function marcarTarea(taskId){
@@ -218,7 +233,6 @@ function marcarTarea(taskId){
       }
     });
   });
-
   saveProjects(projects);
   mostrarProjects();
 
@@ -270,6 +284,47 @@ function addTarea(projectId){
     }
   });
 
+  saveProjects(projects);
+  mostrarProjects();
+}
+
+function borrarTarea(taskId){
+  const confirmado = confirm('¿Borrar esta tarea?');
+  if(!confirmado) return;
+
+  const projects = getProjects();
+
+  projects.forEach((proyecto) =>{
+    proyecto.tareas = proyecto.tares.filter((item) => {
+      if (item.tipo === 'tarea'){
+        return item.id !== taskId;
+      }
+      if (item.tipo === 'carpeta'){
+        item.tareas = item.tareas.filter((sub) =>  sub.id !== taskId);
+        return true;
+      }
+      return  true;
+    });
+
+    saveProjects(projects);
+    mostrarProjects();
+  });
+}
+
+function addProyecto(){
+  const nombre = prompt('Nombre del proyecto:');
+
+  if (nombre === null || nombre.trim() === ''){
+    return;
+  }
+
+  const projects = getProjects();
+
+  projects.push({
+    id: crypto.randomUUID(),
+    nombre: nombre.trim(),
+    tareas: []
+  });
   saveProjects(projects);
   mostrarProjects();
 }
@@ -326,7 +381,7 @@ function mostrarEventos(){
 }
 
 
-// Por ahora, cambio de pantalla mostrando/ocultando cada sección.
+//Cambio de pantalla mostrando/ocultando cada sección.
 document.querySelectorAll('.nav-item').forEach((btn) => {
   btn.addEventListener('click', () => {
     const targetScreen = btn.dataset.screen; // ej. "proyectos", "agenda", "perfil"
