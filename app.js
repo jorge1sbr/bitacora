@@ -186,24 +186,29 @@ function mostrarProyectos(){
 }
 
 
-// ===== Funcionamiento de bootones y =====
+// ===== Funcionamiento de botones y =====
 document.getElementById('project-list').addEventListener('click',(event) =>{
-  //Si el click es en elcheckbox: marcar/desmarcar
   const checkbox = event.target.closest('.task-checkbox');
   if (checkbox != null){
     const li = checkbox.closest('.task');
-    marcarTarea(li.dataset.taskId);
+    if (!li.classList.contains('task-folder')) {
+      marcarTarea(li.dataset.taskId);
+    }
+    // si es carpeta su estado se calcula solo
     return;
   }
 
   const textoTarea = event.target.closest('.task-text');
   if (textoTarea !== null){
     const li = textoTarea.closest('.task');
-    editarTarea(li.dataset.taskId);
+    if (li.classList.contains('task-folder')) {
+      editarCarpeta(li.dataset.folderId);
+    } else {
+      editarTarea(li.dataset.taskId);
+    }
     return;
   }
-}
-)
+})
 
 //Detectar clic en "Añadir tarea"
 document.getElementById('project-list').addEventListener('click', (event) => {
@@ -233,20 +238,25 @@ document.getElementById('project-list').addEventListener('click', (event) => {
 
   menuProyecto(boton.dataset.projectId);
 });
+
 // Marca/desmarca una tarea como hecha
 function marcarTarea(taskId){
   const projects = getProyectos();
 
-  projects.forEach((proyecto) => {
-    proyecto.tareas.forEach((tarea) =>{
-      if (tarea.id === taskId){
-        tarea.hecha = !tarea.hecha;
+  function buscarYMarcar(items){
+    items.forEach((item)=> {
+      if (item.tipo === 'tarea' && item.id === taskId){
+        item.hecha = !item.hecha;
+      } else if (item.tipo === 'carpeta'){
+        buscarYMarcar(item.tareas);//busca también dentro de la carpeta
       }
     });
-  });
+  }
+
+  projects.forEach((proyecto) => buscarYMarcar(proyecto.tareas));
+
   guardarProyectos(projects);
   mostrarProyectos();
-
 }
 
 //Editar texto de tareas
@@ -254,13 +264,17 @@ function editarTarea(taskId){
   const projects = getProyectos();
   let tareaEncontrada = null;
 
-  projects.forEach((proyecto)=>{
-    proyecto.tareas.forEach((tarea) =>{
-      if (tarea.id === taskId) {
-        tareaEncontrada = tarea
+  function buscar(items) {
+    items.forEach((item) => {
+      if (item.tipo === 'tarea' && item.id === taskId) {
+        tareaEncontrada = item;
+      } else if (item.tipo === 'carpeta') {
+        buscar(item.tareas);
       }
     });
-  });
+  }
+
+  projects.forEach((proyecto) => buscar(proyecto.tareas));
 
   if(tareaEncontrada === null) return;
 
@@ -384,7 +398,34 @@ function borrarProyecto(projectId){
   mostrarProyectos();
 }
 
+function editarCarpeta(folderId){
+  const proyectos = getProyectos();
+  let carpetaEncontrada = null;
+
+  proyectos.forEach((proyecto) =>{
+    proyecto.tareas.forEach((item) => {
+      if (item.tipo === 'carpeta' && item.id === folderId){
+        carpetaEncontrada = item;
+      }
+    });
+  });
+
+  if (carpetaEncontrada === null) return;
+
+  const nuevoNombre = prompt('Nuevo nombre de la carpeta: ', carpetaEncontrada.nombre);
+
+  if(nuevoNombre === null || nuevoNombre.trim() === '') return;
+
+  carpetaEncontrada.nombre = nuevoNombre.trim();
+  guardarProyectos(proyectos);
+  mostrarProyectos();
+}
+
+
+//==========================================================================================
 //============ AGENDA =========
+//==========================================================================================
+
 //Eventos como texto en localStorage
 function saveEventos(eventos) {
   const texto = JSON.stringify(eventos);
