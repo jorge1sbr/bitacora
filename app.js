@@ -72,19 +72,19 @@ const EVENTOS_RAIZ = [
 //===================== PROYECTOS ===================
 
 //Proyectos guardados como texto en localStorage
-function saveProjects(projects){
+function guardarProyectos(projects){
   const texto = JSON.stringify(projects);
   localStorage.setItem('bitacora_projects', texto)
 
 }
 
 //Texto a json de nuevo 
-function getProjects() {
+function getProyectos() {
   const texto = localStorage.getItem('bitacora_projects');
 
   if (texto == null){
     //Si no hay nada guardado todavía 
-    saveProjects(PROYECTOS_RAIZ);
+    guardarProyectos(PROYECTOS_RAIZ);
     return PROYECTOS_RAIZ;
   }
 
@@ -149,8 +149,8 @@ function generarItemHtml(item){
 }
 
 //Pintar los proyectos en pantaalla
-function mostrarProjects(){
-  const projects = getProjects();
+function mostrarProyectos(){
+  const projects = getProyectos();
   const contenedor = document.getElementById('project-list');
   
   contenedor.innerHTML = ''; // vaciamos el HTML fijo de antes
@@ -165,7 +165,10 @@ function mostrarProjects(){
       <article class="project-card">
         <div class="project-card-header">
           <span class="project-name">${proyecto.nombre}</span>
-          <span class="project-count">${conteo.hechas} / ${conteo.total} tareas</span>
+          <div class="project-header-actions">
+            <span class="project-count">${conteo.hechas} / ${conteo.total} tareas</span>
+            <button class="project-menu-btn" data-project-id="${proyecto.id}">⋯</button>
+          </div>
         </div>
         <div class="progress-bar">
           <div class="progress-fill progress-green" style="width: ${porcentaje}%"></div>
@@ -219,12 +222,20 @@ document.getElementById('project-list').addEventListener('click', (event) => {
 });
 //Detectar clic en "+ Proyecto"
 document.getElementById('add-project-btn').addEventListener('click', () => {
+
   addProyecto();
 });
 
+// ===== Detectar clic en el menú de un proyecto (⋯) =====
+document.getElementById('project-list').addEventListener('click', (event) => {
+  const boton = event.target.closest('.project-menu-btn');
+  if (boton === null) return;
+
+  menuProyecto(boton.dataset.projectId);
+});
 // Marca/desmarca una tarea como hecha
 function marcarTarea(taskId){
-  const projects = getProjects();
+  const projects = getProyectos();
 
   projects.forEach((proyecto) => {
     proyecto.tareas.forEach((tarea) =>{
@@ -233,14 +244,14 @@ function marcarTarea(taskId){
       }
     });
   });
-  saveProjects(projects);
-  mostrarProjects();
+  guardarProyectos(projects);
+  mostrarProyectos();
 
 }
 
-//Editar texto  detareas
+//Editar texto de tareas
 function editarTarea(taskId){
-  const projects = getProjects();
+  const projects = getProyectos();
   let tareaEncontrada = null;
 
   projects.forEach((proyecto)=>{
@@ -260,8 +271,8 @@ function editarTarea(taskId){
   }
 
   tareaEncontrada.texto = nuevoTexto.trim();
-  saveProjects(projects);
-  mostrarProjects();
+  guardarProyectos(projects);
+  mostrarProyectos();
 }
 
 function addTarea(projectId){
@@ -271,7 +282,7 @@ function addTarea(projectId){
     return
   }
 
-  const projects =getProjects();
+  const projects = getProyectos();
 
   projects.forEach((proyecto) => {
     if(proyecto.id === projectId){
@@ -284,18 +295,18 @@ function addTarea(projectId){
     }
   });
 
-  saveProjects(projects);
-  mostrarProjects();
+  guardarProyectos(projects);
+  mostrarProyectos();
 }
 
 function borrarTarea(taskId){
   const confirmado = confirm('¿Borrar esta tarea?');
   if(!confirmado) return;
 
-  const projects = getProjects();
+  const projects = getProyectos();
 
   projects.forEach((proyecto) =>{
-    proyecto.tareas = proyecto.tares.filter((item) => {
+    proyecto.tareas = proyecto.tareas.filter((item) => {
       if (item.tipo === 'tarea'){
         return item.id !== taskId;
       }
@@ -306,8 +317,8 @@ function borrarTarea(taskId){
       return  true;
     });
 
-    saveProjects(projects);
-    mostrarProjects();
+    guardarProyectos(projects);
+    mostrarProyectos();
   });
 }
 
@@ -318,17 +329,60 @@ function addProyecto(){
     return;
   }
 
-  const projects = getProjects();
+  const projects = getProyectos();
 
   projects.push({
     id: crypto.randomUUID(),
     nombre: nombre.trim(),
     tareas: []
   });
-  saveProjects(projects);
-  mostrarProjects();
+  guardarProyectos(projects);
+  mostrarProyectos();
 }
 
+function menuProyecto(projectId){
+  const accion = prompt('Escribe "editar" para renombrar el proyecto o "borrar" para eliminarlo');
+
+  if (accion === null) return;
+
+  if (accion.trim().toLowerCase() === 'editar'){
+    editarProyecto(projectId);
+  } else if (accion.trim().toLowerCase() === 'borrar'){
+    borrarProyecto(projectId)
+  }
+}
+
+function editarProyecto(projectId){
+  const proyectos = getProyectos();
+  let proyectoEncontrado = null;
+
+  proyectos.forEach((proyecto) =>{
+    if(proyecto.id === projectId){
+      proyectoEncontrado = proyecto;
+    }
+  });
+  
+  if (proyectoEncontrado === null) return;
+
+  const nuevoNombre = prompt('Nuevo nombre del proyecto:', proyectoEncontrado.nombre);
+  
+  if(nuevoNombre === null || nuevoNombre.trim()=== '') return;
+
+  proyectoEncontrado.nombre = nuevoNombre.trim();
+  guardarProyectos(proyectos);
+  mostrarProyectos();
+}
+
+function borrarProyecto(projectId){
+  const confirmado = confirm('¿Borrar este proyecto y todas sus tareas?')
+  if(!confirmado) return;
+
+  let proyectos = getProyectos();
+  proyectos = proyectos.filter((proyecto) => proyecto.id !== projectId);
+
+  guardarProyectos(proyectos);
+  mostrarProyectos();
+}
 
 //============ AGENDA =========
 //Eventos como texto en localStorage
@@ -398,5 +452,5 @@ document.querySelectorAll('.nav-item').forEach((btn) => {
   });
 });
 
-mostrarProjects();
+mostrarProyectos();
 mostrarEventos();
