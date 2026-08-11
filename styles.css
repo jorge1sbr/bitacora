@@ -193,6 +193,20 @@ body {
   margin-bottom: 10px;
 }
 
+.add-task-btn {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 12px;
+  margin-top: 10px;
+  cursor: pointer;
+  padding: 0;
+}
+
+.add-task-btn:hover {
+  color: var(--green);
+}
+
 .bottom-nav {
   position: fixed;
   bottom: 0;

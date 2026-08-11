@@ -168,6 +168,7 @@ function mostrarProjects(){
         <ul class="task-list">
           ${listaTareasHtml}
         </ul>
+        <button class="add-task-btn" data-project-id="${proyecto.id}">+ Añadir tarea</button>
       </article>
     `;
 
@@ -196,6 +197,15 @@ document.getElementById('project-list').addEventListener('click',(event) =>{
   }
 }
 )
+
+// ===== Detectar clic en "Añadir tarea" =====
+document.getElementById('project-list').addEventListener('click', (event) => {
+  const boton = event.target.closest('.add-task-btn');
+  if (boton === null) return;
+
+  addTarea(boton.dataset.projectId);
+});
+
 
 // Marca/desmarca una tarea como hecha
 function marcarTarea(taskId){
@@ -236,6 +246,30 @@ function editarTarea(taskId){
   }
 
   tareaEncontrada.texto = nuevoTexto.trim();
+  saveProjects(projects);
+  mostrarProjects();
+}
+
+function addTarea(projectId){
+  const texto = prompt('Nuev tarea:');
+
+  if(texto === null || texto.trim() === ''){
+    return
+  }
+
+  const projects =getProjects();
+
+  projects.forEach((proyecto) => {
+    if(proyecto.id === projectId){
+      proyecto.tareas.push({
+        id: crypto.randomUUID(),
+        tipo: 'tarea',
+        texto: texto.trim(),
+        hecha: false
+      });
+    }
+  });
+
   saveProjects(projects);
   mostrarProjects();
 }
