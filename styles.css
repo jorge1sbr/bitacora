@@ -235,7 +235,6 @@ body {
   border: none;
   color: var(--text-secondary);
   font-size: 12px;
-  margin-top: 10px;
   cursor: pointer;
   padding: 0;
 }
@@ -244,7 +243,27 @@ body {
   color: var(--green);
 }
 
-.delete-task-btn {
+.project-footer-actions {
+  display: flex;
+  gap: 14px;
+  margin-top: 10px;
+}
+
+.add-folder-btn {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 12px;
+  cursor: pointer;
+  padding: 0;
+}
+
+.add-folder-btn:hover {
+  color: var(--green);
+}
+
+.delete-task-btn,
+.delete-folder-btn {
   background: none;
   border: none;
   color: var(--text-muted);
@@ -255,7 +274,8 @@ body {
   align-items: center;
 }
 
-.delete-task-btn:hover {
+.delete-task-btn:hover,
+.delete-folder-btn:hover {
   color: var(--orange);
 }
 

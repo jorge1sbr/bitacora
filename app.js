@@ -128,23 +128,27 @@ function generarItemHtml(item){
     `;
   }
 
-  if (item.tipo === 'carpeta'){
+if (item.tipo === 'carpeta'){
     const conteo = contarTareas(item.tareas);
     const todoHecho = conteo.total > 0 && conteo.hechas == conteo.total;
     const claseHecha = todoHecho ? 'done' : '';
 
-    const subitemsHtml =item.tareas.map(generarItemHtml).join('');
+    const subitemsHtml = item.tareas.map(generarItemHtml).join('');
 
     return `
       <li class="task task-folder ${claseHecha}" data-folder-id="${item.id}">
         <span class="task-text">${item.nombre} <span class="folder-count">${conteo.hechas}/${conteo.total}</span> 📁</span>
         <span class="task-checkbox"></span>
+        <button class="delete-folder-btn" data-folder-id="${item.id}">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6h16Z"/>
+          </svg>
+        </button>
       </li>
       <ul class="subtask-list-new">
         ${subitemsHtml}
       </ul>
     `;
-
   }
 }
 
@@ -176,7 +180,10 @@ function mostrarProyectos(){
         <ul class="task-list">
           ${listaTareasHtml}
         </ul>
-        <button class="add-task-btn" data-project-id="${proyecto.id}">+ Añadir tarea</button>
+        <div class="project-footer-actions">
+          <button class="add-task-btn" data-project-id="${proyecto.id}">+ Añadir tarea</button>
+          <button class="add-folder-btn" data-project-id="${proyecto.id}">+ Añadir carpeta</button>
+        </div>
       </article>
     `;
 
@@ -225,10 +232,27 @@ document.getElementById('project-list').addEventListener('click', (event) => {
 
   borrarTarea(boton.dataset.taskId);
 });
+
 //Detectar clic en "+ Proyecto"
 document.getElementById('add-project-btn').addEventListener('click', () => {
 
   addProyecto();
+});
+
+//Detectar clic en "Añadir carpeta"
+document.getElementById('project-list').addEventListener('click', (event) => {
+  const boton = event.target.closest('.add-folder-btn');
+  if (boton === null) return;
+
+  addCarpeta(boton.dataset.projectId);
+});
+
+//Detectar clic en "borrar carpeta"
+document.getElementById('project-list').addEventListener('click', (event) => {
+  const boton = event.target.closest('.delete-folder-btn');
+  if (boton === null) return;
+
+  borrarCarpeta(boton.dataset.folderId);
 });
 
 // ===== Detectar clic en el menú de un proyecto (⋯) =====
@@ -313,6 +337,7 @@ function addTarea(projectId){
   mostrarProyectos();
 }
 
+
 function borrarTarea(taskId){
   const confirmado = confirm('¿Borrar esta tarea?');
   if(!confirmado) return;
@@ -334,6 +359,44 @@ function borrarTarea(taskId){
     guardarProyectos(projects);
     mostrarProyectos();
   });
+}
+
+function addCarpeta(projectId) {
+  const nombre = prompt('Nombre de la carpeta:');
+
+  if (nombre === null || nombre.trim() === '') {
+    return;
+  }
+
+  const projects = getProyectos();
+
+  projects.forEach((proyecto) => {
+    if (proyecto.id === projectId) {
+      proyecto.tareas.push({
+        id: crypto.randomUUID(),
+        tipo: 'carpeta',
+        nombre: nombre.trim(),
+        tareas: []
+      });
+    }
+  });
+
+  guardarProyectos(projects);
+  mostrarProyectos();
+}
+
+function borrarCarpeta(folderId) {
+  const confirmado = confirm('¿Borrar esta carpeta y todas sus tareas de dentro?');
+  if (!confirmado) return;
+
+  const projects = getProyectos();
+
+  projects.forEach((proyecto) => {
+    proyecto.tareas = proyecto.tareas.filter((item) => item.id !== folderId);
+  });
+
+  guardarProyectos(projects);
+  mostrarProyectos();
 }
 
 function addProyecto(){
