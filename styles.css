@@ -122,14 +122,15 @@ body {
   font-size: 15px;
 }
 
-.project-count {
-  font-size: 13px;
-  color: var(--text-secondary);
-}
 .project-header-actions {
   display: flex;
   align-items: center;
   gap: 10px;
+}
+
+.project-count {
+  font-size: 13px;
+  color: var(--text-secondary);
 }
 
 .project-menu-btn {
@@ -182,7 +183,25 @@ body {
   align-items: center;
   gap: 10px;
   font-size: 13px;
-  color: var(--text-primary); /* pendiente: destaca */
+  color: var(--text-primary);
+}
+
+.task-text {
+  flex: 1;
+  min-width: 0;
+  cursor: pointer;
+}
+
+.task.done .task-text {
+  color: var(--text-muted);
+}
+
+.task-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  margin-right: 4px;
 }
 
 .task-checkbox {
@@ -199,18 +218,16 @@ body {
   border-color: var(--green);
 }
 
-.task-text {
-  cursor: pointer;
-}
-
-.task.done .task-text {
-  color: var(--text-muted); /* hecha: se apaga, llama menos la atención */
-}
-
-/* ===== Carpetas dentro de un proyecto (variante C) ===== */
+/* ===== Carpetas dentro de un proyecto ===== */
 
 .task-folder {
   margin-top: 10px;
+}
+
+.folder-icon {
+  vertical-align: -2px;
+  margin-left: 4px;
+  color: var(--text-secondary);
 }
 
 .folder-count {
@@ -230,25 +247,13 @@ body {
   margin-bottom: 10px;
 }
 
-.add-task-btn {
-  background: none;
-  border: none;
-  color: var(--text-secondary);
-  font-size: 12px;
-  cursor: pointer;
-  padding: 0;
-}
-
-.add-task-btn:hover {
-  color: var(--green);
-}
-
 .project-footer-actions {
   display: flex;
   gap: 14px;
   margin-top: 10px;
 }
 
+.add-task-btn,
 .add-folder-btn {
   background: none;
   border: none;
@@ -258,6 +263,7 @@ body {
   padding: 0;
 }
 
+.add-task-btn:hover,
 .add-folder-btn:hover {
   color: var(--green);
 }
@@ -272,11 +278,28 @@ body {
   flex-shrink: 0;
   display: flex;
   align-items: center;
+  opacity: 0;
+  transition: opacity 0.15s, color 0.15s;
+}
+
+.task:hover .delete-task-btn,
+.task:hover .delete-folder-btn {
+  opacity: 1;
 }
 
 .delete-task-btn:hover,
 .delete-folder-btn:hover {
-  color: var(--orange);
+  color: #ef4444;
+}
+
+/* Móvil: no hay hover con ratón, así que mostramos la papelera siempre,
+   pero tenue, para que no dependa de un gesto que no existe en touch.
+   (Más adelante se puede sustituir por "pulsar la tarea revela iconos") */
+@media (hover: none) {
+  .delete-task-btn,
+  .delete-folder-btn {
+    opacity: 0.45;
+  }
 }
 
 .bottom-nav {
