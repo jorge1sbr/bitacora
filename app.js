@@ -144,6 +144,7 @@ function generarItemHtml(item){
           <svg class="folder-icon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z"/>
           </svg>
+          <button class="add-subtask-btn" data-folder-id="${item.id}">+</button>
         </span>
         <span class="task-actions">
           <span class="task-checkbox"></span>
@@ -177,7 +178,16 @@ function mostrarProyectos(){
     const html = `
       <article class="project-card">
         <div class="project-card-header">
-          <span class="project-name">${proyecto.nombre}</span>
+          <div class="project-title-group">
+            <span class="project-name">${proyecto.nombre}</span>
+            <div class="add-item-wrapper">
+              <button class="add-item-btn" data-project-id="${proyecto.id}">+</button>
+              <div class="add-item-menu" data-project-id="${proyecto.id}" hidden>
+                <button class="add-item-option" data-action="tarea" data-project-id="${proyecto.id}">Añadir tarea</button>
+                <button class="add-item-option" data-action="carpeta" data-project-id="${proyecto.id}">Añadir subcarpeta</button>
+              </div>
+            </div>
+          </div>
           <div class="project-header-actions">
             <span class="project-count">${conteo.hechas} / ${conteo.total} tareas</span>
             <button class="project-menu-btn" data-project-id="${proyecto.id}">⋯</button>
@@ -189,10 +199,6 @@ function mostrarProyectos(){
         <ul class="task-list">
           ${listaTareasHtml}
         </ul>
-        <div class="project-footer-actions">
-          <button class="add-task-btn" data-project-id="${proyecto.id}">+ Añadir tarea</button>
-          <button class="add-folder-btn" data-project-id="${proyecto.id}">+ Añadir carpeta</button>
-        </div>
       </article>
     `;
 
@@ -231,7 +237,11 @@ document.getElementById('project-list').addEventListener('click', (event) => {
   const boton = event.target.closest('.add-task-btn');
   if (boton === null) return;
 
-  addTarea(boton.dataset.projectId);
+  if (boton.dataset.folderId) {
+    addTareaEnCarpeta(boton.dataset.folderId);
+  } else {
+    addTarea(boton.dataset.projectId);
+  }
 });
 
 //Detectar clic en "borrar tarea" 
@@ -346,6 +356,35 @@ function addTarea(projectId){
   mostrarProyectos();
 }
 
+function addTareaEnCarpeta(folderId) {
+  const texto = prompt('Nueva tarea:');
+
+  if (texto === null || texto.trim() === '') {
+    return;
+  }
+
+  const projects = getProyectos();
+
+  function buscarCarpetaYAnadir(items) {
+    items.forEach((item) => {
+      if (item.tipo === 'carpeta' && item.id === folderId) {
+        item.tareas.push({
+          id: crypto.randomUUID(),
+          tipo: 'tarea',
+          texto: texto.trim(),
+          hecha: false
+        });
+      } else if (item.tipo === 'carpeta') {
+        buscarCarpetaYAnadir(item.tareas);
+      }
+    });
+  }
+
+  projects.forEach((proyecto) => buscarCarpetaYAnadir(proyecto.tareas));
+
+  guardarProyectos(projects);
+  mostrarProyectos();
+}
 
 function borrarTarea(taskId){
   const confirmado = confirm('¿Borrar esta tarea?');
@@ -493,7 +532,49 @@ function editarCarpeta(folderId){
   mostrarProyectos();
 }
 
+//Abrir/cerrar el menú "+" de un proyecto o carpeta 
+document.getElementById('project-list').addEventListener('click', (event) => {
+  const botonAdd = event.target.closest('.add-item-btn');
+  const botonTarea = event.target.closest('.add-subtask-btn');
+  const opcion = event.target.closest('.add-item-option');
 
+  // Cierra todos los menús abiertos
+  document.querySelectorAll('.add-item-menu').forEach((menu) => {
+    if (!botonAdd || menu !== botonAdd.nextElementSibling) {
+      menu.hidden = true;
+    }
+  });
+
+  if (botonAdd !== null) {
+    const menu = botonAdd.nextElementSibling;
+    menu.hidden = !menu.hidden;
+    return;
+  }
+
+  if (botonTarea !== null) {
+    addTareaEnCarpeta(botonTarea.dataset.folderId);
+    return;
+  }
+
+  if (opcion !== null) {
+    const accion = opcion.dataset.action;
+    if (accion === 'tarea') {
+      addTarea(opcion.dataset.projectId);
+    } else if (accion === 'carpeta') {
+      addCarpeta(opcion.dataset.projectId);
+    }
+  }
+});
+
+// Cierra cualquier menú "+" abierto si se hace clic fuera de él
+document.addEventListener('click', (event) => {
+  const dentroDelMenu = event.target.closest('.add-item-wrapper');
+  if (dentroDelMenu === null) {
+    document.querySelectorAll('.add-item-menu').forEach((menu) => {
+      menu.hidden = true;
+    });
+  }
+});
 //==========================================================================================
 //============ AGENDA =========
 //==========================================================================================
