@@ -38,9 +38,9 @@
           <h1>Hoy, 5 de agosto</h1>
           <p class="subtitle">4 eventos</p>
         </div>
+        <button id="add-event-btn" class="badge badge-add">+ Evento</button>
       </header>
 
-      <!-- El contenido de esta lista se genera dinámicamente desde JS (mostrarEventos) -->
       <section class="agenda-list" id="agenda-list"></section>
     </main>
 
@@ -86,7 +86,47 @@
     </nav>
 
   </div>
+  <!-- ===== Crear/editar evento ===== -->
+  <div id="event-modal" class="modal-overlay" hidden>
+    <div class="modal-box">
+      <h2 id="event-modal-title">Nuevo evento</h2>
 
+      <label class="modal-field">
+        Título
+        <input type="text" id="event-titulo" placeholder="ej. Estudiar Python">
+      </label>
+
+      <label class="modal-field-checkbox">
+        <input type="checkbox" id="event-sin-hora">
+        Sin hora fija
+      </label>
+
+      <label class="modal-field" id="event-hora-field">
+        Hora
+        <input type="time" id="event-hora">
+      </label>
+
+      <label class="modal-field" id="event-duracion-field">
+        Duración
+        <input type="text" id="event-duracion" placeholder="ej. 30 min">
+      </label>
+
+      <label class="modal-field-checkbox">
+        <input type="checkbox" id="event-tiene-alarma">
+        Poner alarma
+      </label>
+
+      <label class="modal-field" id="event-alarma-field" hidden>
+        Hora de la alarma
+        <input type="time" id="event-alarma">
+      </label>
+
+      <div class="modal-actions">
+        <button id="event-modal-cancel" class="modal-btn-secondary">Cancelar</button>
+        <button id="event-modal-save" class="modal-btn-primary">Guardar</button>
+      </div>
+    </div>
+  </div>
   <script src="app.js"></script>
 </body>
 </html>

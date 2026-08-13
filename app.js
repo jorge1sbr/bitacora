@@ -602,9 +602,15 @@ function mostrarEventos(){
   const eventos = getEventos();
   const contenedor = document.getElementById('agenda-list');
 
+  const eventosOrdenados = [...eventos].sort((a, b) => {
+    if (a.hora === null) return 1;
+    if (b.hora === null) return -1;
+    return a.hora.localeCompare(b.hora);
+  });
+
   contenedor.innerHTML = '';
 
-  eventos.forEach((evento) =>{
+  eventosOrdenados.forEach((evento) => {
     const tieneAlarma = evento.alarma !== null;
     const iconoAlarma = tieneAlarma ? `<span class="alarm-icon">🔔</span>` : '';
 
@@ -625,8 +631,97 @@ function mostrarEventos(){
     `;
 
     contenedor.innerHTML += html;
-  })
+  });
 }
+const modal = document.getElementById('event-modal');
+const inputSinHora = document.getElementById('event-sin-hora');
+const campoHora = document.getElementById('event-hora-field');
+const inputTieneAlarma = document.getElementById('event-tiene-alarma');
+const campoAlarma = document.getElementById('event-alarma-field');
+
+function abrirModalEvento(){
+  document.getElementById('event-titulo').value = '';
+  document.getElementById('event-hora').value = '';
+  document.getElementById('event-duracion').value = '';
+  document.getElementById('event-alarma').value = '';
+
+  inputSinHora.checked= false;
+  inputTieneAlarma.checked = false;
+  campoHora.hidden = false;
+  campoAlarma.hidden = true;
+
+  modal.hidden = false;
+}
+
+function cerrarModalEvento(){
+  modal.hidden = true;
+}
+
+document.getElementById('add-event-btn').addEventListener('click', abrirModalEvento);
+document.getElementById('event-modal-cancel').addEventListener('click', cerrarModalEvento);
+
+//Cierra el modal si se hace clickfuera de el
+modal.addEventListener('click',(event) =>{
+  if (event.target === modal){
+    cerrarModalEvento();
+  }
+});
+
+//Mostar/ocultar el campo de hora
+inputSinHora.addEventListener('change', ()=>{
+  campoHora.hidden = inputSinHora.checked;
+});
+
+//Mostrar/ocultar el campo de alarma 
+inputTieneAlarma.addEventListener('change', ()=>{
+  campoAlarma.hidden = !inputTieneAlarma.checked;
+});
+
+document.getElementById('event-modal-save').addEventListener('click', () =>{
+  const titulo = document.getElementById('event-titulo').value.trim();
+
+  if (titulo === ''){
+    alert('El evento vv=necesita un título')
+    return;
+  }
+
+  const sinHora = inputSinHora.checked;
+  const horaValor = document.getElementById('event-hora').value;
+
+  if(!sinHora && horaValor === ''){
+    alert('Pon una hora o marca "Sin hora fija"');
+    return;
+  }
+
+  const hora = sinHora ? null :horaValor;
+
+  const duracionTexto = document.getElementById('event-duracion').value.trim();
+  const duracion = duracionTexto === '' ? null : duracionTexto;
+
+  const tieneAlarma = inputTieneAlarma.checked;
+  const alarmaValor = document.getElementById('event-alarma').value ;
+
+  if (tieneAlarma && alarmaValor === '') {
+    alert('Pon una hora para la alarma, o desmarca "Poner alarma".');
+    return;
+  }
+  const alarma = tieneAlarma ? alarmaValor : null;
+
+  const eventos = getEventos();
+
+  eventos.push({
+    id: crypto.randomUUID(),
+    hora: hora,
+    titulo: titulo,
+    duracion: duracion,
+    alarma: alarma
+  });
+
+  saveEventos(eventos);
+  mostrarEventos();
+  cerrarModalEvento();
+})
+
 
 
 //Cambio de pantalla mostrando/ocultando cada sección.
