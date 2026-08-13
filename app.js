@@ -597,7 +597,7 @@ function getEventos(){
   return eventos;
 }
 
-//
+//Pintar eventos
 function mostrarEventos(){
   const eventos = getEventos();
   const contenedor = document.getElementById('agenda-list');
@@ -610,45 +610,161 @@ function mostrarEventos(){
 
   contenedor.innerHTML = '';
 
+  //Ordenar los eventos en función de la hora y 2 cards si hay o no hora definida
   eventosOrdenados.forEach((evento) => {
-    const tieneAlarma = evento.alarma !== null;
-    const iconoAlarma = tieneAlarma ? `<span class="alarm-icon">🔔</span>` : '';
+  const tieneAlarma = evento.alarma !== null;
+  const iconoAlarma = tieneAlarma ? `<span class="alarm-icon">🔔</span>` : '';
 
-    const textoHora = evento.hora !== null ? evento.hora : '';
+  const menuHtml = `
+    <div class="event-menu-wrapper">
+      <button class="event-menu-btn" data-event-id="${evento.id}">⋯</button>
+      <div class="event-menu" data-event-id="${evento.id}" hidden>
+        <button class="event-menu-option" data-action="editar" data-event-id="${evento.id}">Editar</button>
+        <button class="event-menu-option event-menu-option-danger" data-action="borrar" data-event-id="${evento.id}">Borrar</button>
+      </div>
+    </div>
+  `;
+
+  let html;
+
+  if (evento.hora === null) {
+    // Tarjeta sin fila de hora
+    html = `
+      <article class="event-card event-card-compact" data-event-id="${evento.id}">
+        <p class="event-title">${evento.titulo}</p>
+        <div class="event-header-actions">
+          ${iconoAlarma}
+          ${menuHtml}
+        </div>
+      </article>
+    `;
+  } else {
     const textoDuracion = evento.duracion !== null ? evento.duracion : '';
-
-    const html = `
+    // Tarjeta con hora
+    html = `
       <article class="event-card" data-event-id="${evento.id}">
         <div class="event-card-header">
           <span class="event-time-group">
-            <span class="event-time">${textoHora}</span>
+            <span class="event-time">${evento.hora}</span>
             <span class="event-duration">${textoDuracion}</span>
           </span>
-          ${iconoAlarma}
+          <div class="event-header-actions">
+            ${iconoAlarma}
+            ${menuHtml}
+          </div>
         </div>
         <p class="event-title">${evento.titulo}</p>
       </article>
     `;
+  }
 
-    contenedor.innerHTML += html;
-  });
+  contenedor.innerHTML += html;
+});
+
 }
+
+
+document.getElementById('agenda-list').addEventListener('click', (event) => {
+  const botonMenu = event.target.closest('.event-menu-btn');
+  const opcion = event.target.closest('.event-menu-option');
+
+  //Cerrar otros menús abiertos
+  document.querySelectorAll('.event-menu').forEach((menu) => {
+    if (!botonMenu || menu !== botonMenu.nextElementSibling) {
+      menu.hidden = true;
+    }
+  });
+
+  //Abrir menú interno se se pulso
+  if (botonMenu !== null) {
+    const menu = botonMenu.nextElementSibling;
+    menu.hidden = !menu.hidden;
+    return;
+  }
+
+  if (opcion !== null) {
+    const accion = opcion.dataset.action;
+    const eventId = opcion.dataset.eventId;
+    if (accion === 'editar') {
+      editarEvento(eventId);
+    } else if (accion === 'borrar') {
+      borrarEvento(eventId);
+    }
+  }
+});
+
+//Escuchador sobre todo el doc
+document.addEventListener('click', (event) => {
+  const dentroDelMenu = event.target.closest('.event-menu-wrapper');
+
+  //Cerrar menú si el click fue fuera 
+  if (dentroDelMenu === null) {
+    document.querySelectorAll('.event-menu').forEach((menu) => {
+      menu.hidden = true;
+    });
+  }
+});
+
+function borrarEvento(eventId) {
+  const confirmado = confirm('¿Borrar este evento?');
+  if (!confirmado) return;
+
+  let eventos = getEventos();
+  eventos = eventos.filter((evento) => evento.id !== eventId);
+
+  saveEventos(eventos);
+  mostrarEventos();
+}
+
+function editarEvento(eventId) {
+  abrirModalEventoEditar(eventId);
+}
+
 const modal = document.getElementById('event-modal');
 const inputSinHora = document.getElementById('event-sin-hora');
 const campoHora = document.getElementById('event-hora-field');
 const inputTieneAlarma = document.getElementById('event-tiene-alarma');
 const campoAlarma = document.getElementById('event-alarma-field');
+let eventoEditandoId = null;
 
-function abrirModalEvento(){
+function abrirModalEventoNuevo(){
   document.getElementById('event-titulo').value = '';
   document.getElementById('event-hora').value = '';
   document.getElementById('event-duracion').value = '';
   document.getElementById('event-alarma').value = '';
 
-  inputSinHora.checked= false;
+  inputSinHora.checked = false;
   inputTieneAlarma.checked = false;
   campoHora.hidden = false;
   campoAlarma.hidden = true;
+
+  eventoEditandoId = null;
+  document.getElementById('event-modal-title').textContent = 'Nuevo evento';
+
+  modal.hidden = false;
+}
+
+function abrirModalEventoEditar(eventId) {
+  const eventos = getEventos();
+  const evento = eventos.find((e) => e.id === eventId);
+
+  if (evento === undefined) return;
+
+  eventoEditandoId = eventId;
+  document.getElementById('event-modal-title').textContent = 'Editar evento';
+
+  document.getElementById('event-titulo').value = evento.titulo;
+  document.getElementById('event-duracion').value = evento.duracion || '';
+
+  const sinHora = evento.hora === null;
+  inputSinHora.checked = sinHora;
+  campoHora.hidden = sinHora;
+  document.getElementById('event-hora').value = evento.hora || '';
+
+  const tieneAlarma = evento.alarma !== null;
+  inputTieneAlarma.checked = tieneAlarma;
+  campoAlarma.hidden = !tieneAlarma;
+  document.getElementById('event-alarma').value = evento.alarma || '';
 
   modal.hidden = false;
 }
@@ -657,7 +773,7 @@ function cerrarModalEvento(){
   modal.hidden = true;
 }
 
-document.getElementById('add-event-btn').addEventListener('click', abrirModalEvento);
+document.getElementById('add-event-btn').addEventListener('click', abrirModalEventoNuevo);
 document.getElementById('event-modal-cancel').addEventListener('click', cerrarModalEvento);
 
 //Cierra el modal si se hace clickfuera de el
@@ -681,7 +797,7 @@ document.getElementById('event-modal-save').addEventListener('click', () =>{
   const titulo = document.getElementById('event-titulo').value.trim();
 
   if (titulo === ''){
-    alert('El evento vv=necesita un título')
+    alert('El evento necesita un título')
     return;
   }
 
@@ -709,18 +825,28 @@ document.getElementById('event-modal-save').addEventListener('click', () =>{
 
   const eventos = getEventos();
 
-  eventos.push({
-    id: crypto.randomUUID(),
-    hora: hora,
-    titulo: titulo,
-    duracion: duracion,
-    alarma: alarma
-  });
+  if (eventoEditandoId === null) {
+    eventos.push({
+      id: crypto.randomUUID(),
+      hora: hora,
+      titulo: titulo,
+      duracion: duracion,
+      alarma: alarma
+    });
+  } else {
+    const evento = eventos.find((e) => e.id === eventoEditandoId);
+    if (evento !== undefined) {
+      evento.hora = hora;
+      evento.titulo = titulo;
+      evento.duracion = duracion;
+      evento.alarma = alarma;
+    }
+  }
 
   saveEventos(eventos);
   mostrarEventos();
   cerrarModalEvento();
-})
+});
 
 
 
