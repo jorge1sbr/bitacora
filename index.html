@@ -27,7 +27,7 @@
         <span class="streak-number">7</span> días de racha de constancia
       </div>
 
-      <!-- El contenido de esta lista se genera dinámicamente desde JS (mostrarProjects) -->
+      <!-- El contenido de esta lista se genera dinámicamente desde JS (mostrarProyectos) -->
       <section class="project-list" id="project-list"></section>
     </main>
 
@@ -86,6 +86,7 @@
     </nav>
 
   </div>
+
   <!-- ===== Crear/editar evento ===== -->
   <div id="event-modal" class="modal-overlay" hidden>
     <div class="modal-box">
@@ -111,6 +112,18 @@
         <input type="text" id="event-duracion" placeholder="ej. 30 min">
       </label>
 
+      <div class="modal-field">
+        <span>Color</span>
+        <div class="color-bordes-evento" id="event-color-swatches">
+          <button type="button" class="color-borde-evento color-borde-evento-vacio selected" data-color="" title="Sin color"></button>
+          <button type="button" class="color-borde-evento" data-color="#4ade80" style="background:#4ade80"></button>
+          <button type="button" class="color-borde-evento" data-color="#38bdf8" style="background:#38bdf8"></button>
+          <button type="button" class="color-borde-evento" data-color="#f5a623" style="background:#f5a623"></button>
+          <button type="button" class="color-borde-evento" data-color="#f472b6" style="background:#f472b6"></button>
+          <button type="button" class="color-borde-evento" data-color="#a78bfa" style="background:#a78bfa"></button>
+        </div>
+      </div>
+
       <label class="modal-field-checkbox">
         <input type="checkbox" id="event-tiene-alarma">
         Poner alarma
@@ -127,6 +140,7 @@
       </div>
     </div>
   </div>
+
   <script src="app.js"></script>
 </body>
 </html>

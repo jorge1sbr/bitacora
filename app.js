@@ -614,6 +614,7 @@ function mostrarEventos(){
   eventosOrdenados.forEach((evento) => {
   const tieneAlarma = evento.alarma !== null;
   const iconoAlarma = tieneAlarma ? `<span class="alarm-icon">🔔</span>` : '';
+  const estiloColor = evento.color ? `style="border-left-color: ${evento.color}"` : '';
 
   const menuHtml = `
     <div class="event-menu-wrapper">
@@ -630,7 +631,7 @@ function mostrarEventos(){
   if (evento.hora === null) {
     // Tarjeta sin fila de hora
     html = `
-      <article class="event-card event-card-compact" data-event-id="${evento.id}">
+      <article class="event-card event-card-compact" data-event-id="${evento.id}" ${estiloColor}>
         <p class="event-title">${evento.titulo}</p>
         <div class="event-header-actions">
           ${iconoAlarma}
@@ -642,7 +643,7 @@ function mostrarEventos(){
     const textoDuracion = evento.duracion !== null ? evento.duracion : '';
     // Tarjeta con hora
     html = `
-      <article class="event-card" data-event-id="${evento.id}">
+      <article class="event-card" data-event-id="${evento.id}" ${estiloColor}>
         <div class="event-card-header">
           <span class="event-time-group">
             <span class="event-time">${evento.hora}</span>
@@ -738,6 +739,9 @@ function abrirModalEventoNuevo(){
   campoHora.hidden = false;
   campoAlarma.hidden = true;
 
+  document.querySelectorAll('.color-borde-evento').forEach((c) => c.classList.remove('selected'));
+  document.querySelector('.color-borde-evento-vacio').classList.add('selected');
+
   eventoEditandoId = null;
   document.getElementById('event-modal-title').textContent = 'Nuevo evento';
 
@@ -766,6 +770,15 @@ function abrirModalEventoEditar(eventId) {
   campoAlarma.hidden = !tieneAlarma;
   document.getElementById('event-alarma').value = evento.alarma || '';
 
+  const colorGuardado = evento.color || '';
+  document.querySelectorAll('.color-borde-evento').forEach((c) => {
+    if (c.dataset.color === colorGuardado) {
+      c.classList.add('selected');
+    } else {
+      c.classList.remove('selected');
+    }
+  });
+
   modal.hidden = false;
 }
 
@@ -793,6 +806,16 @@ inputTieneAlarma.addEventListener('change', ()=>{
   campoAlarma.hidden = !inputTieneAlarma.checked;
 });
 
+//Elegir colores del evento
+document.getElementById('event-color-swatches').addEventListener('click', (event) => {
+  const colorBorde = event.target.closest('.color-borde-evento');
+  if (colorBorde === null) return;
+
+  document.querySelectorAll('.color-borde-evento').forEach((c) => c.classList.remove('selected'));
+  colorBorde.classList.add('selected');
+});
+
+//escuchador guardar 
 document.getElementById('event-modal-save').addEventListener('click', () =>{
   const titulo = document.getElementById('event-titulo').value.trim();
 
@@ -821,27 +844,32 @@ document.getElementById('event-modal-save').addEventListener('click', () =>{
     alert('Pon una hora para la alarma, o desmarca "Poner alarma".');
     return;
   }
+
   const alarma = tieneAlarma ? alarmaValor : null;
+  const colorBordeSeleccionado = document.querySelector('.color-borde-evento.selected');
+  const color = colorBordeSeleccionado ? colorBordeSeleccionado.dataset.color || null : null;
 
   const eventos = getEventos();
 
   if (eventoEditandoId === null) {
-    eventos.push({
-      id: crypto.randomUUID(),
-      hora: hora,
-      titulo: titulo,
-      duracion: duracion,
-      alarma: alarma
-    });
-  } else {
-    const evento = eventos.find((e) => e.id === eventoEditandoId);
-    if (evento !== undefined) {
-      evento.hora = hora;
-      evento.titulo = titulo;
-      evento.duracion = duracion;
-      evento.alarma = alarma;
-    }
+  eventos.push({
+    id: crypto.randomUUID(),
+    hora: hora,
+    titulo: titulo,
+    duracion: duracion,
+    alarma: alarma,
+    color: color
+  });
+} else {
+  const evento = eventos.find((e) => e.id === eventoEditandoId);
+  if (evento !== undefined) {
+    evento.hora = hora;
+    evento.titulo = titulo;
+    evento.duracion = duracion;
+    evento.alarma = alarma;
+    evento.color = color;
   }
+}
 
   saveEventos(eventos);
   mostrarEventos();

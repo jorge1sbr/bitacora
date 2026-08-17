@@ -385,6 +385,7 @@ body {
 .event-card {
   background: var(--bg-card);
   border: 1px solid var(--border);
+  border-left: 3px solid var(--text-muted);
   border-radius: var(--radius);
   padding: 16px;
 }
@@ -614,4 +615,31 @@ body {
 .modal-btn-primary {
   background: var(--green);
   color: var(--bg);
+}
+
+.color-bordes-evento {
+  display: flex;
+  gap: 10px;
+}
+
+.color-borde-evento {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  padding: 0;
+}
+
+.color-borde-evento.selected {
+  border-color: var(--text-primary);
+}
+
+.color-borde-evento-vacio {
+  background: var(--text-muted);
+  border-color: var(--border);
+}
+
+.color-borde-evento-vacio.selected {
+  border-color: var(--text-primary);
 }
