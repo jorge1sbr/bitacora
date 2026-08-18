@@ -643,3 +643,68 @@ body {
 .color-borde-evento-vacio.selected {
   border-color: var(--text-primary);
 }
+/* ===== Perfil ===== */
+
+.profile-highlight {
+  text-align: center;
+  margin-bottom: 18px;
+}
+
+.profile-highlight-sub {
+  color: var(--text-secondary);
+  font-size: 12px;
+  margin-bottom: 4px;
+}
+
+.profile-highlight-percent {
+  color: var(--green);
+  font-size: 38px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.profile-section-label {
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+
+.project-progress-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.project-progress-name {
+  color: var(--text-primary);
+  font-size: 11px;
+  width: 70px;
+  flex-shrink: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.project-progress-bar {
+  flex: 1;
+  height: 14px;
+  background: var(--bg-card-alt);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.project-progress-fill {
+  height: 100%;
+  background: var(--green);
+}
+
+.project-progress-percent {
+  color: var(--text-muted);
+  font-size: 10px;
+  width: 32px;
+  text-align: right;
+  flex-shrink: 0;
+}

@@ -68,7 +68,6 @@ const EVENTOS_RAIZ = [
   }
 ];
 
-
 //===================== PROYECTOS ===================
 
 //Proyectos guardados como texto en localStorage
@@ -112,6 +111,61 @@ function contarTareas(items){
     return { total, hechas};
 }
 
+//Mostrar perfil
+function mostrarPerfil() {
+  const proyectos = getProyectos();
+
+  const proyectosTotales = proyectos.length;
+  const proyectosActivos = proyectos.filter((p) => p.tareas.length > 0).length;
+
+  let tareasTotales = 0;
+  let tareasHechas = 0;
+
+  proyectos.forEach((proyecto) => {
+    const conteo = contarTareas(proyecto.tareas);
+    tareasTotales += conteo.total;
+    tareasHechas += conteo.hechas;
+  });
+
+  const tareasPendientes = tareasTotales - tareasHechas;
+  const porcentaje = tareasTotales === 0 ? 0 : Math.round((tareasHechas / tareasTotales) * 100);
+
+  document.getElementById('profile-percent').textContent = `${porcentaje}%`;
+
+  const contenedorStats = document.getElementById('profile-stats');
+  contenedorStats.innerHTML = `
+    <div class="stat-card">
+      <span class="stat-value">${proyectosTotales}</span>
+      <span class="stat-label">Proyectos totales</span>
+    </div>
+    <div class="stat-card">
+      <span class="stat-value">${proyectosActivos}</span>
+      <span class="stat-label">Proyectos activos</span>
+    </div>
+    <div class="stat-card">
+      <span class="stat-value">${tareasPendientes}</span>
+      <span class="stat-label">Tareas pendientes</span>
+    </div>
+  `;
+
+  const contenedorProgreso = document.getElementById('profile-project-progress');
+  contenedorProgreso.innerHTML = proyectos.map((proyecto) => {
+    const conteo = contarTareas(proyecto.tareas);
+    const pct = conteo.total === 0 ? 0 : Math.round((conteo.hechas / conteo.total) * 100);
+
+    return `
+      <div class="project-progress-row">
+        <span class="project-progress-name">${proyecto.nombre}</span>
+        <div class="project-progress-bar">
+          <div class="project-progress-fill" style="width: ${pct}%"></div>
+        </div>
+        <span class="project-progress-percent">${pct}%</span>
+      </div>
+    `;
+  }).join('');
+}
+
+//Generar las cards 
 function generarItemHtml(item){
   if(item.tipo === 'tarea'){
     const claseHecha = item.hecha ? 'done' : '';
@@ -206,7 +260,6 @@ function mostrarProyectos(){
 
   });
 }
-
 
 // ===== Funcionamiento de botones y =====
 document.getElementById('project-list').addEventListener('click',(event) =>{
@@ -575,6 +628,8 @@ document.addEventListener('click', (event) => {
     });
   }
 });
+
+
 //==========================================================================================
 //============ AGENDA =========
 //==========================================================================================
@@ -662,8 +717,7 @@ function mostrarEventos(){
   contenedor.innerHTML += html;
 });
 
-}
-
+} 
 
 document.getElementById('agenda-list').addEventListener('click', (event) => {
   const botonMenu = event.target.closest('.event-menu-btn');
@@ -877,7 +931,6 @@ document.getElementById('event-modal-save').addEventListener('click', () =>{
 });
 
 
-
 //Cambio de pantalla mostrando/ocultando cada sección.
 document.querySelectorAll('.nav-item').forEach((btn) => {
   btn.addEventListener('click', () => {
@@ -897,3 +950,4 @@ document.querySelectorAll('.nav-item').forEach((btn) => {
 
 mostrarProyectos();
 mostrarEventos();
+mostrarPerfil();
