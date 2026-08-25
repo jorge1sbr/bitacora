@@ -198,7 +198,13 @@ function generarItemHtml(item){
           <svg class="folder-icon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z"/>
           </svg>
-          <button class="add-subtask-btn" data-folder-id="${item.id}">+</button>
+            <span class="add-item-wrapper">
+            <button class="add-item-btn" data-folder-id="${item.id}">+</button>
+            <div class="add-item-menu" data-folder-id="${item.id}" hidden>
+              <button class="add-item-option" data-action="tarea" data-folder-id="${item.id}">Añadir tarea</button>
+              <button class="add-item-option" data-action="carpeta" data-folder-id="${item.id}">Añadir subcarpeta</button>
+            </div>
+          </span>
         </span>
         <span class="task-actions">
           <span class="task-checkbox"></span>
@@ -263,6 +269,10 @@ function mostrarProyectos(){
 
 // ===== Funcionamiento de botones y =====
 document.getElementById('project-list').addEventListener('click',(event) =>{
+
+  const dentroDelMenuAdd = event.target.closest('.add-item-wrapper');
+  if (dentroDelMenuAdd !== null) return;
+
   const checkbox = event.target.closest('.task-checkbox');
   if (checkbox != null){
     const li = checkbox.closest('.task');
@@ -285,17 +295,6 @@ document.getElementById('project-list').addEventListener('click',(event) =>{
   }
 })
 
-//Detectar clic en "Añadir tarea"
-document.getElementById('project-list').addEventListener('click', (event) => {
-  const boton = event.target.closest('.add-task-btn');
-  if (boton === null) return;
-
-  if (boton.dataset.folderId) {
-    addTareaEnCarpeta(boton.dataset.folderId);
-  } else {
-    addTarea(boton.dataset.projectId);
-  }
-});
 
 //Detectar clic en "borrar tarea" 
 document.getElementById('project-list').addEventListener('click', (event) => {
@@ -311,13 +310,6 @@ document.getElementById('add-project-btn').addEventListener('click', () => {
   addProyecto();
 });
 
-//Detectar clic en "Añadir carpeta"
-document.getElementById('project-list').addEventListener('click', (event) => {
-  const boton = event.target.closest('.add-folder-btn');
-  if (boton === null) return;
-
-  addCarpeta(boton.dataset.projectId);
-});
 
 //Detectar clic en "borrar carpeta"
 document.getElementById('project-list').addEventListener('click', (event) => {
@@ -486,6 +478,36 @@ function addCarpeta(projectId) {
   mostrarProyectos();
 }
 
+function addSubcarpeta(folderId) {
+  const nombre = prompt('Nombre de la subcarpeta:');
+
+  if (nombre === null || nombre.trim() === '') {
+    return;
+  }
+
+  const projects = getProyectos();
+
+  function buscarCarpetaYAnadir(items) {
+    items.forEach((item) => {
+      if (item.tipo === 'carpeta' && item.id === folderId) {
+        item.tareas.push({
+          id: crypto.randomUUID(),
+          tipo: 'carpeta',
+          nombre: nombre.trim(),
+          tareas: []
+        });
+      } else if (item.tipo === 'carpeta') {
+        buscarCarpetaYAnadir(item.tareas);
+      }
+    });
+  }
+
+  projects.forEach((proyecto) => buscarCarpetaYAnadir(proyecto.tareas));
+
+  guardarProyectos(projects);
+  mostrarProyectos();
+}
+
 function borrarCarpeta(folderId) {
   const confirmado = confirm('¿Borrar esta carpeta y todas sus tareas de dentro?');
   if (!confirmado) return;
@@ -588,10 +610,8 @@ function editarCarpeta(folderId){
 //Abrir/cerrar el menú "+" de un proyecto o carpeta 
 document.getElementById('project-list').addEventListener('click', (event) => {
   const botonAdd = event.target.closest('.add-item-btn');
-  const botonTarea = event.target.closest('.add-subtask-btn');
   const opcion = event.target.closest('.add-item-option');
 
-  // Cierra todos los menús abiertos
   document.querySelectorAll('.add-item-menu').forEach((menu) => {
     if (!botonAdd || menu !== botonAdd.nextElementSibling) {
       menu.hidden = true;
@@ -604,17 +624,23 @@ document.getElementById('project-list').addEventListener('click', (event) => {
     return;
   }
 
-  if (botonTarea !== null) {
-    addTareaEnCarpeta(botonTarea.dataset.folderId);
-    return;
-  }
-
   if (opcion !== null) {
     const accion = opcion.dataset.action;
-    if (accion === 'tarea') {
-      addTarea(opcion.dataset.projectId);
-    } else if (accion === 'carpeta') {
-      addCarpeta(opcion.dataset.projectId);
+    const projectId = opcion.dataset.projectId;
+    const folderId = opcion.dataset.folderId;
+
+    if (folderId) {
+      if (accion === 'tarea') {
+        addTareaEnCarpeta(folderId);
+      } else if (accion === 'carpeta') {
+        addSubcarpeta(folderId);
+      }
+    } else {
+      if (accion === 'tarea') {
+        addTarea(projectId);
+      } else if (accion === 'carpeta') {
+        addCarpeta(projectId);
+      }
     }
   }
 });
