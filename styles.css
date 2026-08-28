@@ -708,3 +708,25 @@ body {
   text-align: right;
   flex-shrink: 0;
 }
+
+.collapse-btn {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 12px;
+  cursor: pointer;
+  padding: 0;
+  transition: transform 0.15s;
+  flex-shrink: 0;
+}
+
+.collapse-btn.collapsed {
+  transform: rotate(-90deg);
+}
+.task-list[hidden] {
+  display: none;
+}
+
+.subtask-list-new[hidden] {
+  display: none;
+}

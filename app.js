@@ -188,6 +188,8 @@ function generarItemHtml(item){
     const conteo = contarTareas(item.tareas);
     const todoHecho = conteo.total > 0 && conteo.hechas == conteo.total;
     const claseHecha = todoHecho ? 'done' : '';
+    const colapsado = proyectosColapsados.has(item.id);
+    const flechaClase = colapsado ? 'collapsed' : '';
 
     const subitemsHtml = item.tareas.map(generarItemHtml).join('');
 
@@ -198,13 +200,14 @@ function generarItemHtml(item){
           <svg class="folder-icon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z"/>
           </svg>
-            <span class="add-item-wrapper">
+          <span class="add-item-wrapper">
             <button class="add-item-btn" data-folder-id="${item.id}">+</button>
             <div class="add-item-menu" data-folder-id="${item.id}" hidden>
               <button class="add-item-option" data-action="tarea" data-folder-id="${item.id}">Añadir tarea</button>
               <button class="add-item-option" data-action="carpeta" data-folder-id="${item.id}">Añadir subcarpeta</button>
             </div>
           </span>
+          <button class="collapse-btn ${flechaClase}" data-folder-id="${item.id}">▾</button>
         </span>
         <span class="task-actions">
           <span class="task-checkbox"></span>
@@ -215,7 +218,7 @@ function generarItemHtml(item){
           </button>
         </span>
       </li>
-      <ul class="subtask-list-new">
+      <ul class="subtask-list-new" ${colapsado ? 'hidden' : ''}>
         ${subitemsHtml}
       </ul>
     `;
@@ -226,14 +229,16 @@ function generarItemHtml(item){
 function mostrarProyectos(){
   const projects = getProyectos();
   const contenedor = document.getElementById('project-list');
-  
-  contenedor.innerHTML = ''; // vaciamos el HTML fijo de antes
+
+  contenedor.innerHTML = '';
 
   projects.forEach((proyecto) => {
     const conteo = contarTareas(proyecto.tareas);
     const porcentaje = conteo.total === 0 ? 0 : (conteo.hechas / conteo.total) * 100;
+    const colapsado = proyectosColapsados.has(proyecto.id);
+    const flechaClase = colapsado ? 'collapsed' : '';
 
-    const listaTareasHtml  = proyecto.tareas.map(generarItemHtml).join('');
+    const listaTareasHtml = proyecto.tareas.map(generarItemHtml).join('');
 
     const html = `
       <article class="project-card">
@@ -247,6 +252,7 @@ function mostrarProyectos(){
                 <button class="add-item-option" data-action="carpeta" data-project-id="${proyecto.id}">Añadir subcarpeta</button>
               </div>
             </div>
+            <button class="collapse-btn ${flechaClase}" data-project-id="${proyecto.id}">▾</button>
           </div>
           <div class="project-header-actions">
             <span class="project-count">${conteo.hechas} / ${conteo.total} tareas</span>
@@ -256,14 +262,13 @@ function mostrarProyectos(){
         <div class="progress-bar">
           <div class="progress-fill progress-green" style="width: ${porcentaje}%"></div>
         </div>
-        <ul class="task-list">
+        <ul class="task-list" ${colapsado ? 'hidden' : ''}>
           ${listaTareasHtml}
         </ul>
       </article>
     `;
 
     contenedor.innerHTML += html;
-
   });
 }
 
@@ -272,6 +277,9 @@ document.getElementById('project-list').addEventListener('click',(event) =>{
 
   const dentroDelMenuAdd = event.target.closest('.add-item-wrapper');
   if (dentroDelMenuAdd !== null) return;
+
+  const botonCollapse = event.target.closest('.collapse-btn');
+  if (botonCollapse !== null) return;
 
   const checkbox = event.target.closest('.task-checkbox');
   if (checkbox != null){
@@ -295,6 +303,20 @@ document.getElementById('project-list').addEventListener('click',(event) =>{
   }
 })
 
+//Colapsar / abrir los proyectos
+document.getElementById('project-list').addEventListener('click', (event) => {
+  const boton = event.target.closest('.collapse-btn');
+  if (boton === null) return;
+
+  const id = boton.dataset.projectId || boton.dataset.folderId;
+  if (proyectosColapsados.has(id)) {
+    proyectosColapsados.delete(id);
+  } else {
+    proyectosColapsados.add(id);
+  }
+
+  mostrarProyectos();
+});
 
 //Detectar clic en "borrar tarea" 
 document.getElementById('project-list').addEventListener('click', (event) => {
@@ -807,6 +829,7 @@ const campoHora = document.getElementById('event-hora-field');
 const inputTieneAlarma = document.getElementById('event-tiene-alarma');
 const campoAlarma = document.getElementById('event-alarma-field');
 let eventoEditandoId = null;
+const proyectosColapsados = new Set();
 
 function abrirModalEventoNuevo(){
   document.getElementById('event-titulo').value = '';
