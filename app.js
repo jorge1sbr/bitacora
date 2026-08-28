@@ -1,32 +1,206 @@
 const PROYECTOS_RAIZ = [
   {
-    id: 'ia',
-    nombre: 'IA',
-    tareas: [
-      { id: 't1', tipo: 'tarea', texto: 'Video Benj. Cordero', hecha: true },
-      { id: 't2', tipo: 'tarea', texto: 'Crear Agentes Claude', hecha: true }
+    "id": "ia",
+    "nombre": "IA",
+    "tareas": [
+      {
+        "id": "t2",
+        "tipo": "tarea",
+        "texto": "Crear Agentes Claude",
+        "hecha": true
+      }
     ]
   },
   {
-    id: 'python',
-    nombre: 'Python',
-    tareas: [
-      { id: 't3', tipo: 'tarea', texto: 'Estudiar Python — fundamentos', hecha: true },
+    "id": "python",
+    "nombre": "Python",
+    "tareas": [
       {
-        id: 'c1',
-        tipo: 'carpeta',
-        nombre: 'Data with Baraa',
-        tareas: [
-          { id: 't4', tipo: 'tarea', texto: 'Módulo 1', hecha: true },
-          { id: 't5', tipo: 'tarea', texto: 'Módulo 2', hecha: false }
+        "id": "t3",
+        "tipo": "tarea",
+        "texto": "Estudiar Python — fundamentos",
+        "hecha": false
+      },
+      {
+        "id": "c1",
+        "tipo": "carpeta",
+        "nombre": "Data with Baraa",
+        "tareas": [
+          {
+            "id": "t4",
+            "tipo": "tarea",
+            "texto": "Módulo 1",
+            "hecha": true
+          },
+          {
+            "id": "t5",
+            "tipo": "tarea",
+            "texto": "Módulo 2",
+            "hecha": false
+          }
         ]
       }
     ]
   },
   {
-    id: 'app',
-    nombre: 'App',
-    tareas: []
+    "id": "app",
+    "nombre": "App",
+    "tareas": []
+  },
+  {
+    "id": "dp900",
+    "nombre": "DP-900",
+    "tareas": [
+      {
+        "id": "dp900-1",
+        "tipo": "carpeta",
+        "nombre": "Introducción a los conceptos de datos principales de Microsoft Azure",
+        "tareas": [
+          {
+            "id": "dp900-1a",
+            "tipo": "carpeta",
+            "nombre": "Exploración de los conceptos de los datos principales",
+            "tareas": [
+              { "id": "dp900-1a-t1", "tipo": "tarea", "texto": "Introducción", "hecha": false },
+              { "id": "dp900-1a-t2", "tipo": "tarea", "texto": "Identificación de los formatos de datos", "hecha": false },
+              { "id": "dp900-1a-t3", "tipo": "tarea", "texto": "Exploración del almacenamiento de datos", "hecha": false },
+              { "id": "dp900-1a-t4", "tipo": "tarea", "texto": "Exploración de bases de datos", "hecha": false },
+              { "id": "dp900-1a-t5", "tipo": "tarea", "texto": "Exploración del procesamiento de datos transaccionales", "hecha": false },
+              { "id": "dp900-1a-t6", "tipo": "tarea", "texto": "Exploración del procesamiento de datos analíticos", "hecha": false },
+              { "id": "dp900-1a-t7", "tipo": "tarea", "texto": "Evaluación de módulos", "hecha": false },
+              { "id": "dp900-1a-t8", "tipo": "tarea", "texto": "Resumen", "hecha": false }
+            ]
+          },
+          {
+            "id": "dp900-1b",
+            "tipo": "carpeta",
+            "nombre": "Exploración de roles y servicio de datos",
+            "tareas": [
+              { "id": "dp900-1b-t1", "tipo": "tarea", "texto": "Introducción", "hecha": false },
+              { "id": "dp900-1b-t2", "tipo": "tarea", "texto": "Exploración de roles de trabajo del mundo de los datos", "hecha": false },
+              { "id": "dp900-1b-t3", "tipo": "tarea", "texto": "Identificación de los servicios de datos", "hecha": false },
+              { "id": "dp900-1b-t4", "tipo": "tarea", "texto": "Evaluación de módulos", "hecha": false },
+              { "id": "dp900-1b-t5", "tipo": "tarea", "texto": "Resumen", "hecha": false }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "dp900-2",
+        "tipo": "carpeta",
+        "nombre": "Introducción a los datos relacionales de datos de Microsoft Azure en Azure",
+        "tareas": [
+          {
+            "id": "dp900-2a",
+            "tipo": "carpeta",
+            "nombre": "Exploración de los conceptos fundamentales de datos relacionales",
+            "tareas": [
+              { "id": "dp900-2a-t1", "tipo": "tarea", "texto": "Introducción", "hecha": false },
+              { "id": "dp900-2a-t2", "tipo": "tarea", "texto": "Comprender los datos relacionales", "hecha": false },
+              { "id": "dp900-2a-t3", "tipo": "tarea", "texto": "Compresión de la normalización", "hecha": false },
+              { "id": "dp900-2a-t4", "tipo": "tarea", "texto": "Exploración de SQL", "hecha": false },
+              { "id": "dp900-2a-t5", "tipo": "tarea", "texto": "Descripción de objetos de base de datos", "hecha": false },
+              { "id": "dp900-2a-t6", "tipo": "tarea", "texto": "Evaluación de módulos", "hecha": false },
+              { "id": "dp900-2a-t7", "tipo": "tarea", "texto": "Resumen", "hecha": false }
+            ]
+          },
+          {
+            "id": "dp900-2b",
+            "tipo": "carpeta",
+            "nombre": "Exploración de los servicios de bases de datos relacionales en Azure",
+            "tareas": [
+              { "id": "dp900-2b-t1", "tipo": "tarea", "texto": "Introducción", "hecha": false },
+              { "id": "dp900-2b-t2", "tipo": "tarea", "texto": "Descripción de los servicios de Azure para bases de datos de código abierto", "hecha": false },
+              { "id": "dp900-2b-t3", "tipo": "tarea", "texto": "Ejercicio: exploración de servicios de base de datos relacionales de Azure", "hecha": false },
+              { "id": "dp900-2b-t4", "tipo": "tarea", "texto": "Evaluación de módulos", "hecha": false },
+              { "id": "dp900-2b-t5", "tipo": "tarea", "texto": "Resumen", "hecha": false }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "dp900-3",
+        "tipo": "carpeta",
+        "nombre": "Introducción a los datos no relacionales de Microsoft Azure",
+        "tareas": [
+          {
+            "id": "dp900-3a",
+            "tipo": "carpeta",
+            "nombre": "Explorar Azure Storage para datos no relacionales",
+            "tareas": [
+              { "id": "dp900-3a-t1", "tipo": "tarea", "texto": "Introducción", "hecha": false },
+              { "id": "dp900-3a-t2", "tipo": "tarea", "texto": "Exploración de Azure Blob Storage", "hecha": false },
+              { "id": "dp900-3a-t3", "tipo": "tarea", "texto": "Exploración de Azure Data Lake Storage Gen2", "hecha": false },
+              { "id": "dp900-3a-t4", "tipo": "tarea", "texto": "Explorar Microsoft OneLake en Fabric", "hecha": false },
+              { "id": "dp900-3a-t5", "tipo": "tarea", "texto": "Explorar Azure Files", "hecha": false },
+              { "id": "dp900-3a-t6", "tipo": "tarea", "texto": "Exploración de tablas de Azure", "hecha": false },
+              { "id": "dp900-3a-t7", "tipo": "tarea", "texto": "Ejercicio: Exploración de Azure Storage", "hecha": false },
+              { "id": "dp900-3a-t8", "tipo": "tarea", "texto": "Evaluación de módulos", "hecha": false },
+              { "id": "dp900-3a-t9", "tipo": "tarea", "texto": "Resumen", "hecha": false }
+            ]
+          },
+          {
+            "id": "dp900-3b",
+            "tipo": "carpeta",
+            "nombre": "Exploración de los aspectos básicos de Azure Cosmos DB",
+            "tareas": [
+              { "id": "dp900-3b-t1", "tipo": "tarea", "texto": "Introducción", "hecha": false },
+              { "id": "dp900-3b-t2", "tipo": "tarea", "texto": "Descripción de Azure Cosmos DB", "hecha": false },
+              { "id": "dp900-3b-t3", "tipo": "tarea", "texto": "Identificación de las API de Azure Cosmos DB", "hecha": false },
+              { "id": "dp900-3b-t4", "tipo": "tarea", "texto": "Ejercicio: Exploración de Cosmos DB", "hecha": false },
+              { "id": "dp900-3b-t5", "tipo": "tarea", "texto": "Evaluación de módulos", "hecha": false },
+              { "id": "dp900-3b-t6", "tipo": "tarea", "texto": "Resumen", "hecha": false }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "dp900-4",
+        "tipo": "carpeta",
+        "nombre": "Introducción al análisis de datos de Microsoft Azure en Azure",
+        "tareas": [
+          {
+            "id": "dp900-4a",
+            "tipo": "carpeta",
+            "nombre": "Exploración de los aspectos básicos del análisis a gran escala",
+            "tareas": [
+              { "id": "dp900-4a-t1", "tipo": "tarea", "texto": "Introducción", "hecha": false },
+              { "id": "dp900-4a-t2", "tipo": "tarea", "texto": "Descripción de la arquitectura de un almacenamiento de datos", "hecha": false },
+              { "id": "dp900-4a-t3", "tipo": "tarea", "texto": "Exploración de canalizaciones de ingesta de datos", "hecha": false }
+            ]
+          },
+          {
+            "id": "dp900-4b",
+            "tipo": "carpeta",
+            "nombre": "Exploración de los aspectos básicos del análisis en tiempo real",
+            "tareas": [
+              { "id": "dp900-4b-t1", "tipo": "tarea", "texto": "Introducción", "hecha": false },
+              { "id": "dp900-4b-t2", "tipo": "tarea", "texto": "Comprensión del procesamiento de flujos y por lotes", "hecha": false },
+              { "id": "dp900-4b-t3", "tipo": "tarea", "texto": "Exploración de elementos comunes de la arquitectura del procesamiento de flujos", "hecha": false },
+              { "id": "dp900-4b-t4", "tipo": "tarea", "texto": "Explorar la inteligencia en tiempo real de Microsoft Fabric", "hecha": false },
+              { "id": "dp900-4b-t5", "tipo": "tarea", "texto": "Explorar el streaming estructurado de Apache Spark", "hecha": false },
+              { "id": "dp900-4b-t6", "tipo": "tarea", "texto": "Ejercicio: Explorar la inteligencia en tiempo real de Microsoft Fabric", "hecha": false },
+              { "id": "dp900-4b-t7", "tipo": "tarea", "texto": "Evaluación del módulo", "hecha": false },
+              { "id": "dp900-4b-t8", "tipo": "tarea", "texto": "Resumen", "hecha": false }
+            ]
+          },
+          {
+            "id": "dp900-4c",
+            "tipo": "carpeta",
+            "nombre": "Exploración de los aspectos básicos de la visualización de datos",
+            "tareas": [
+              { "id": "dp900-4c-t1", "tipo": "tarea", "texto": "Introducción", "hecha": false },
+              { "id": "dp900-4c-t2", "tipo": "tarea", "texto": "Descripción de las herramientas y el flujo de trabajo de Power BI", "hecha": false },
+              { "id": "dp900-4c-t3", "tipo": "tarea", "texto": "Descripción de los conceptos básicos del modelado de datos", "hecha": false },
+              { "id": "dp900-4c-t4", "tipo": "tarea", "texto": "Descripción de consideraciones para la visualización de datos", "hecha": false },
+              { "id": "dp900-4c-t5", "tipo": "tarea", "texto": "Ejercicio: Exploración de aspectos básicos de visualización de datos con Power BI", "hecha": false },
+              { "id": "dp900-4c-t6", "tipo": "tarea", "texto": "Evaluación de módulos", "hecha": false },
+              { "id": "dp900-4c-t7", "tipo": "tarea", "texto": "Resumen", "hecha": false }
+            ]
+          }
+        ]
+      }
+    ]
   }
 ];
 
@@ -89,6 +263,25 @@ function getProyectos() {
 
   const projects = JSON.parse(texto)
   return projects;
+}
+
+// Añade proyectos nuevos definidos en PROYECTOS_RAIZ que aún no existan en lo guardado sin tocar ni borrar nada de lo que el usuario ya tenga
+function migrarProyectosNuevos() {
+  const proyectosGuardados = getProyectos();
+  const idsGuardados = proyectosGuardados.map((p) => p.id);
+
+  let huboNovedades = false;
+
+  PROYECTOS_RAIZ.forEach((proyectoSemilla) => {
+    if (!idsGuardados.includes(proyectoSemilla.id)) {
+      proyectosGuardados.push(proyectoSemilla);
+      huboNovedades = true;
+    }
+  });
+
+  if (huboNovedades) {
+    guardarProyectos(proyectosGuardados);
+  }
 }
 
 // Cuenta tareas totales y hechas de una lista, incluyendo las que están dentro de carpetas
@@ -197,17 +390,19 @@ function generarItemHtml(item){
       <li class="task task-folder ${claseHecha}" data-folder-id="${item.id}">
         <span class="task-text">
           ${item.nombre} <span class="folder-count">${conteo.hechas}/${conteo.total}</span>
-          <svg class="folder-icon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z"/>
-          </svg>
-          <span class="add-item-wrapper">
-            <button class="add-item-btn" data-folder-id="${item.id}">+</button>
-            <div class="add-item-menu" data-folder-id="${item.id}" hidden>
-              <button class="add-item-option" data-action="tarea" data-folder-id="${item.id}">Añadir tarea</button>
-              <button class="add-item-option" data-action="carpeta" data-folder-id="${item.id}">Añadir subcarpeta</button>
-            </div>
+          <span class="folder-meta">
+            <svg class="folder-icon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z"/>
+            </svg>
+            <span class="add-item-wrapper">
+              <button class="add-item-btn" data-folder-id="${item.id}">+</button>
+              <div class="add-item-menu" data-folder-id="${item.id}" hidden>
+                <button class="add-item-option" data-action="tarea" data-folder-id="${item.id}">Añadir tarea</button>
+                <button class="add-item-option" data-action="carpeta" data-folder-id="${item.id}">Añadir subcarpeta</button>
+              </div>
+            </span>
+            <button class="collapse-btn ${flechaClase}" data-folder-id="${item.id}">▾</button>
           </span>
-          <button class="collapse-btn ${flechaClase}" data-folder-id="${item.id}">▾</button>
         </span>
         <span class="task-actions">
           <span class="task-checkbox"></span>
