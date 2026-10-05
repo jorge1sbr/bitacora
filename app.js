@@ -245,7 +245,7 @@ const EVENTOS_RAIZ = [
 //===================== PROYECTOS ===================
 
 //Proyectos guardados como texto en localStorage
-function guardarProyectos(projects){
+function saveProyectos(projects){
   const texto = JSON.stringify(projects);
   localStorage.setItem('bitacora_projects', texto)
 
@@ -257,35 +257,56 @@ function getProyectos() {
 
   if (texto == null){
     //Si no hay nada guardado todavía 
-    guardarProyectos(PROYECTOS_RAIZ);
-    return PROYECTOS_RAIZ;
+    // Se devuelve una copia para no modificar nunca los datos de ejemplo
+    saveProyectos(PROYECTOS_RAIZ);
+    return structuredClone(PROYECTOS_RAIZ);
   }
 
   const projects = JSON.parse(texto)
   return projects;
 }
 
-// Añade proyectos nuevos definidos en PROYECTOS_RAIZ que aún no existan en lo guardado sin tocar ni borrar nada de lo que el usuario ya tenga
-function migrarProyectosNuevos() {
+// Ids de los proyectos de ejemplo que ya se añadieron alguna vez (clave aparte para no tocar bitacora_projects)
+function getSemillas() {
+  const texto = localStorage.getItem('bitacora_semillas');
+  if (texto == null) return [];
+  return JSON.parse(texto);
+}
+
+function saveSemillas(ids) {
+  localStorage.setItem('bitacora_semillas', JSON.stringify(ids));
+}
+
+// Añade proyectos de PROYECTOS_RAIZ que nunca se hayan añadido, sin tocar ni borrar nada de lo que el usuario ya tenga.
+// Si el usuario borra un proyecto de ejemplo, no vuelve a aparecer porque su id queda apuntado en bitacora_semillas
+function migrateProyectosNuevos() {
   const proyectosGuardados = getProyectos();
   const idsGuardados = proyectosGuardados.map((p) => p.id);
+  const semillasAplicadas = getSemillas();
 
   let huboNovedades = false;
 
   PROYECTOS_RAIZ.forEach((proyectoSemilla) => {
-    if (!idsGuardados.includes(proyectoSemilla.id)) {
-      proyectosGuardados.push(proyectoSemilla);
+    const yaAplicada = semillasAplicadas.includes(proyectoSemilla.id);
+    const yaExiste = idsGuardados.includes(proyectoSemilla.id);
+
+    if (!yaAplicada && !yaExiste) {
+      proyectosGuardados.push(structuredClone(proyectoSemilla));
       huboNovedades = true;
+    }
+    if (!yaAplicada) {
+      semillasAplicadas.push(proyectoSemilla.id);
     }
   });
 
   if (huboNovedades) {
-    guardarProyectos(proyectosGuardados);
+    saveProyectos(proyectosGuardados);
   }
+  saveSemillas(semillasAplicadas);
 }
 
 // Cuenta tareas totales y hechas de una lista, incluyendo las que están dentro de carpetas
-function contarTareas(items){
+function countTareas(items){
   let total = 0;
   let hechas = 0;
 
@@ -296,7 +317,7 @@ function contarTareas(items){
         hechas++;
       }
     } else if (item.tipo === 'carpeta'){
-      const resultado = contarTareas(item.tareas); // se llama a sí misma con las tareas de dentro de la carpeta
+      const resultado = countTareas(item.tareas); // se llama a sí misma con las tareas de dentro de la carpeta
       total += resultado.total;
       hechas += resultado.hechas;
     }
@@ -304,8 +325,34 @@ function contarTareas(items){
     return { total, hechas};
 }
 
+// Busca un item por id a cualquier profundidad.
+// Sirve para la lista de proyectos o para cualquier lista de tareas: entra en todo lo que tenga "tareas" (proyectos y carpetas).
+// Devuelve { item, lista } (el item y la lista que lo contiene) o null si no existe
+function findItem(items, id){
+  for (const item of items){
+    if (item.id === id){
+      return { item, lista: items };
+    }
+    if (Array.isArray(item.tareas)){
+      const encontrado = findItem(item.tareas, id); // se llama a sí misma con lo que hay dentro
+      if (encontrado !== null) return encontrado;
+    }
+  }
+  return null;
+}
+
+// Quita un item por id a cualquier profundidad. Devuelve true si lo ha borrado
+function removeItem(items, id){
+  const encontrado = findItem(items, id);
+  if (encontrado === null) return false;
+
+  const posicion = encontrado.lista.indexOf(encontrado.item);
+  encontrado.lista.splice(posicion, 1);
+  return true;
+}
+
 //Mostrar perfil
-function mostrarPerfil() {
+function showPerfil() {
   const proyectos = getProyectos();
 
   const proyectosTotales = proyectos.length;
@@ -315,7 +362,7 @@ function mostrarPerfil() {
   let tareasHechas = 0;
 
   proyectos.forEach((proyecto) => {
-    const conteo = contarTareas(proyecto.tareas);
+    const conteo = countTareas(proyecto.tareas);
     tareasTotales += conteo.total;
     tareasHechas += conteo.hechas;
   });
@@ -343,7 +390,7 @@ function mostrarPerfil() {
 
   const contenedorProgreso = document.getElementById('profile-project-progress');
   contenedorProgreso.innerHTML = proyectos.map((proyecto) => {
-    const conteo = contarTareas(proyecto.tareas);
+    const conteo = countTareas(proyecto.tareas);
     const pct = conteo.total === 0 ? 0 : Math.round((conteo.hechas / conteo.total) * 100);
 
     return `
@@ -359,7 +406,7 @@ function mostrarPerfil() {
 }
 
 //Generar las cards 
-function generarItemHtml(item){
+function buildItemHtml(item){
   if(item.tipo === 'tarea'){
     const claseHecha = item.hecha ? 'done' : '';
     return `
@@ -378,13 +425,13 @@ function generarItemHtml(item){
   }
 
   if (item.tipo === 'carpeta'){
-    const conteo = contarTareas(item.tareas);
+    const conteo = countTareas(item.tareas);
     const todoHecho = conteo.total > 0 && conteo.hechas == conteo.total;
     const claseHecha = todoHecho ? 'done' : '';
     const colapsado = proyectosColapsados.has(item.id);
     const flechaClase = colapsado ? 'collapsed' : '';
 
-    const subitemsHtml = item.tareas.map(generarItemHtml).join('');
+    const subitemsHtml = item.tareas.map(buildItemHtml).join('');
 
     return `
       <li class="task task-folder ${claseHecha}" data-folder-id="${item.id}">
@@ -421,19 +468,19 @@ function generarItemHtml(item){
 }
 
 //Pintar los proyectos en pantaalla
-function mostrarProyectos(){
+function showProyectos(){
   const projects = getProyectos();
   const contenedor = document.getElementById('project-list');
 
   contenedor.innerHTML = '';
 
   projects.forEach((proyecto) => {
-    const conteo = contarTareas(proyecto.tareas);
+    const conteo = countTareas(proyecto.tareas);
     const porcentaje = conteo.total === 0 ? 0 : (conteo.hechas / conteo.total) * 100;
     const colapsado = proyectosColapsados.has(proyecto.id);
     const flechaClase = colapsado ? 'collapsed' : '';
 
-    const listaTareasHtml = proyecto.tareas.map(generarItemHtml).join('');
+    const listaTareasHtml = proyecto.tareas.map(buildItemHtml).join('');
 
     const html = `
       <article class="project-card">
@@ -480,7 +527,7 @@ document.getElementById('project-list').addEventListener('click',(event) =>{
   if (checkbox != null){
     const li = checkbox.closest('.task');
     if (!li.classList.contains('task-folder')) {
-      marcarTarea(li.dataset.taskId);
+      toggleTarea(li.dataset.taskId);
     }
     // si es carpeta su estado se calcula solo
     return;
@@ -490,9 +537,9 @@ document.getElementById('project-list').addEventListener('click',(event) =>{
   if (textoTarea !== null){
     const li = textoTarea.closest('.task');
     if (li.classList.contains('task-folder')) {
-      editarCarpeta(li.dataset.folderId);
+      editCarpeta(li.dataset.folderId);
     } else {
-      editarTarea(li.dataset.taskId);
+      editTarea(li.dataset.taskId);
     }
     return;
   }
@@ -510,7 +557,7 @@ document.getElementById('project-list').addEventListener('click', (event) => {
     proyectosColapsados.add(id);
   }
 
-  mostrarProyectos();
+  showProyectos();
 });
 
 //Detectar clic en "borrar tarea" 
@@ -518,7 +565,7 @@ document.getElementById('project-list').addEventListener('click', (event) => {
   const boton = event.target.closest('.delete-task-btn');
   if (boton === null) return;
 
-  borrarTarea(boton.dataset.taskId);
+  deleteTarea(boton.dataset.taskId);
 });
 
 //Detectar clic en "+ Proyecto"
@@ -533,7 +580,7 @@ document.getElementById('project-list').addEventListener('click', (event) => {
   const boton = event.target.closest('.delete-folder-btn');
   if (boton === null) return;
 
-  borrarCarpeta(boton.dataset.folderId);
+  deleteCarpeta(boton.dataset.folderId);
 });
 
 // ===== Detectar clic en el menú de un proyecto (⋯) =====
@@ -541,61 +588,41 @@ document.getElementById('project-list').addEventListener('click', (event) => {
   const boton = event.target.closest('.project-menu-btn');
   if (boton === null) return;
 
-  menuProyecto(boton.dataset.projectId);
+  openMenuProyecto(boton.dataset.projectId);
 });
 
 // Marca/desmarca una tarea como hecha
-function marcarTarea(taskId){
+function toggleTarea(taskId){
   const projects = getProyectos();
+  const encontrado = findItem(projects, taskId);
+  if (encontrado === null || encontrado.item.tipo !== 'tarea') return;
 
-  function buscarYMarcar(items){
-    items.forEach((item)=> {
-      if (item.tipo === 'tarea' && item.id === taskId){
-        item.hecha = !item.hecha;
-      } else if (item.tipo === 'carpeta'){
-        buscarYMarcar(item.tareas);//busca también dentro de la carpeta
-      }
-    });
-  }
+  encontrado.item.hecha = !encontrado.item.hecha;
 
-  projects.forEach((proyecto) => buscarYMarcar(proyecto.tareas));
-
-  guardarProyectos(projects);
-  mostrarProyectos();
+  saveProyectos(projects);
+  showProyectos();
 }
 
 //Editar texto de tareas
-function editarTarea(taskId){
+function editTarea(taskId){
   const projects = getProyectos();
-  let tareaEncontrada = null;
+  const encontrado = findItem(projects, taskId);
+  if (encontrado === null || encontrado.item.tipo !== 'tarea') return;
 
-  function buscar(items) {
-    items.forEach((item) => {
-      if (item.tipo === 'tarea' && item.id === taskId) {
-        tareaEncontrada = item;
-      } else if (item.tipo === 'carpeta') {
-        buscar(item.tareas);
-      }
-    });
-  }
-
-  projects.forEach((proyecto) => buscar(proyecto.tareas));
-
-  if(tareaEncontrada === null) return;
-
-  const nuevoTexto = prompt('Editar tarea:', tareaEncontrada.texto);
+  const tarea = encontrado.item;
+  const nuevoTexto = prompt('Editar tarea:', tarea.texto);
 
   if(nuevoTexto === null || nuevoTexto.trim() === ''){
     return;
   }
 
-  tareaEncontrada.texto = nuevoTexto.trim();
-  guardarProyectos(projects);
-  mostrarProyectos();
+  tarea.texto = nuevoTexto.trim();
+  saveProyectos(projects);
+  showProyectos();
 }
 
 function addTarea(projectId){
-  const texto = prompt('Nuev tarea:');
+  const texto = prompt('Nueva tarea:');
 
   if(texto === null || texto.trim() === ''){
     return
@@ -614,8 +641,8 @@ function addTarea(projectId){
     }
   });
 
-  guardarProyectos(projects);
-  mostrarProyectos();
+  saveProyectos(projects);
+  showProyectos();
 }
 
 function addTareaEnCarpeta(folderId) {
@@ -626,49 +653,31 @@ function addTareaEnCarpeta(folderId) {
   }
 
   const projects = getProyectos();
+  const encontrado = findItem(projects, folderId);
+  if (encontrado === null || encontrado.item.tipo !== 'carpeta') return;
 
-  function buscarCarpetaYAnadir(items) {
-    items.forEach((item) => {
-      if (item.tipo === 'carpeta' && item.id === folderId) {
-        item.tareas.push({
-          id: crypto.randomUUID(),
-          tipo: 'tarea',
-          texto: texto.trim(),
-          hecha: false
-        });
-      } else if (item.tipo === 'carpeta') {
-        buscarCarpetaYAnadir(item.tareas);
-      }
-    });
-  }
+  encontrado.item.tareas.push({
+    id: crypto.randomUUID(),
+    tipo: 'tarea',
+    texto: texto.trim(),
+    hecha: false
+  });
 
-  projects.forEach((proyecto) => buscarCarpetaYAnadir(proyecto.tareas));
-
-  guardarProyectos(projects);
-  mostrarProyectos();
+  saveProyectos(projects);
+  showProyectos();
 }
 
-function borrarTarea(taskId){
+function deleteTarea(taskId){
   const confirmado = confirm('¿Borrar esta tarea?');
   if(!confirmado) return;
 
   const projects = getProyectos();
+  const borrado = removeItem(projects, taskId);
+  if (!borrado) return;
 
-  projects.forEach((proyecto) =>{
-    proyecto.tareas = proyecto.tareas.filter((item) => {
-      if (item.tipo === 'tarea'){
-        return item.id !== taskId;
-      }
-      if (item.tipo === 'carpeta'){
-        item.tareas = item.tareas.filter((sub) =>  sub.id !== taskId);
-        return true;
-      }
-      return  true;
-    });
-
-    guardarProyectos(projects);
-    mostrarProyectos();
-  });
+  // Se guarda y se repinta una sola vez, fuera de cualquier bucle
+  saveProyectos(projects);
+  showProyectos();
 }
 
 function addCarpeta(projectId) {
@@ -691,8 +700,8 @@ function addCarpeta(projectId) {
     }
   });
 
-  guardarProyectos(projects);
-  mostrarProyectos();
+  saveProyectos(projects);
+  showProyectos();
 }
 
 function addSubcarpeta(folderId) {
@@ -703,40 +712,30 @@ function addSubcarpeta(folderId) {
   }
 
   const projects = getProyectos();
+  const encontrado = findItem(projects, folderId);
+  if (encontrado === null || encontrado.item.tipo !== 'carpeta') return;
 
-  function buscarCarpetaYAnadir(items) {
-    items.forEach((item) => {
-      if (item.tipo === 'carpeta' && item.id === folderId) {
-        item.tareas.push({
-          id: crypto.randomUUID(),
-          tipo: 'carpeta',
-          nombre: nombre.trim(),
-          tareas: []
-        });
-      } else if (item.tipo === 'carpeta') {
-        buscarCarpetaYAnadir(item.tareas);
-      }
-    });
-  }
+  encontrado.item.tareas.push({
+    id: crypto.randomUUID(),
+    tipo: 'carpeta',
+    nombre: nombre.trim(),
+    tareas: []
+  });
 
-  projects.forEach((proyecto) => buscarCarpetaYAnadir(proyecto.tareas));
-
-  guardarProyectos(projects);
-  mostrarProyectos();
+  saveProyectos(projects);
+  showProyectos();
 }
 
-function borrarCarpeta(folderId) {
+function deleteCarpeta(folderId) {
   const confirmado = confirm('¿Borrar esta carpeta y todas sus tareas de dentro?');
   if (!confirmado) return;
 
   const projects = getProyectos();
+  const borrado = removeItem(projects, folderId);
+  if (!borrado) return;
 
-  projects.forEach((proyecto) => {
-    proyecto.tareas = proyecto.tareas.filter((item) => item.id !== folderId);
-  });
-
-  guardarProyectos(projects);
-  mostrarProyectos();
+  saveProyectos(projects);
+  showProyectos();
 }
 
 function addProyecto(){
@@ -753,23 +752,23 @@ function addProyecto(){
     nombre: nombre.trim(),
     tareas: []
   });
-  guardarProyectos(projects);
-  mostrarProyectos();
+  saveProyectos(projects);
+  showProyectos();
 }
 
-function menuProyecto(projectId){
+function openMenuProyecto(projectId){
   const accion = prompt('Escribe "editar" para renombrar el proyecto o "borrar" para eliminarlo');
 
   if (accion === null) return;
 
   if (accion.trim().toLowerCase() === 'editar'){
-    editarProyecto(projectId);
+    editProyecto(projectId);
   } else if (accion.trim().toLowerCase() === 'borrar'){
-    borrarProyecto(projectId)
+    deleteProyecto(projectId)
   }
 }
 
-function editarProyecto(projectId){
+function editProyecto(projectId){
   const proyectos = getProyectos();
   let proyectoEncontrado = null;
 
@@ -786,42 +785,34 @@ function editarProyecto(projectId){
   if(nuevoNombre === null || nuevoNombre.trim()=== '') return;
 
   proyectoEncontrado.nombre = nuevoNombre.trim();
-  guardarProyectos(proyectos);
-  mostrarProyectos();
+  saveProyectos(proyectos);
+  showProyectos();
 }
 
-function borrarProyecto(projectId){
+function deleteProyecto(projectId){
   const confirmado = confirm('¿Borrar este proyecto y todas sus tareas?')
   if(!confirmado) return;
 
   let proyectos = getProyectos();
   proyectos = proyectos.filter((proyecto) => proyecto.id !== projectId);
 
-  guardarProyectos(proyectos);
-  mostrarProyectos();
+  saveProyectos(proyectos);
+  showProyectos();
 }
 
-function editarCarpeta(folderId){
+function editCarpeta(folderId){
   const proyectos = getProyectos();
-  let carpetaEncontrada = null;
+  const encontrado = findItem(proyectos, folderId);
+  if (encontrado === null || encontrado.item.tipo !== 'carpeta') return;
 
-  proyectos.forEach((proyecto) =>{
-    proyecto.tareas.forEach((item) => {
-      if (item.tipo === 'carpeta' && item.id === folderId){
-        carpetaEncontrada = item;
-      }
-    });
-  });
-
-  if (carpetaEncontrada === null) return;
-
+  const carpetaEncontrada = encontrado.item;
   const nuevoNombre = prompt('Nuevo nombre de la carpeta: ', carpetaEncontrada.nombre);
 
   if(nuevoNombre === null || nuevoNombre.trim() === '') return;
 
   carpetaEncontrada.nombre = nuevoNombre.trim();
-  guardarProyectos(proyectos);
-  mostrarProyectos();
+  saveProyectos(proyectos);
+  showProyectos();
 }
 
 //Abrir/cerrar el menú "+" de un proyecto o carpeta 
@@ -888,7 +879,7 @@ function getEventos(){
 
   if(texto == null){
     saveEventos(EVENTOS_RAIZ);
-    return EVENTOS_RAIZ;
+    return structuredClone(EVENTOS_RAIZ);
   }
 
   const eventos = JSON.parse(texto);
@@ -896,7 +887,7 @@ function getEventos(){
 }
 
 //Pintar eventos
-function mostrarEventos(){
+function showEventos(){
   const eventos = getEventos();
   const contenedor = document.getElementById('agenda-list');
 
@@ -984,9 +975,9 @@ document.getElementById('agenda-list').addEventListener('click', (event) => {
     const accion = opcion.dataset.action;
     const eventId = opcion.dataset.eventId;
     if (accion === 'editar') {
-      editarEvento(eventId);
+      editEvento(eventId);
     } else if (accion === 'borrar') {
-      borrarEvento(eventId);
+      deleteEvento(eventId);
     }
   }
 });
@@ -1003,7 +994,7 @@ document.addEventListener('click', (event) => {
   }
 });
 
-function borrarEvento(eventId) {
+function deleteEvento(eventId) {
   const confirmado = confirm('¿Borrar este evento?');
   if (!confirmado) return;
 
@@ -1011,11 +1002,11 @@ function borrarEvento(eventId) {
   eventos = eventos.filter((evento) => evento.id !== eventId);
 
   saveEventos(eventos);
-  mostrarEventos();
+  showEventos();
 }
 
-function editarEvento(eventId) {
-  abrirModalEventoEditar(eventId);
+function editEvento(eventId) {
+  openModalEventoEditar(eventId);
 }
 
 const modal = document.getElementById('event-modal');
@@ -1026,7 +1017,7 @@ const campoAlarma = document.getElementById('event-alarma-field');
 let eventoEditandoId = null;
 const proyectosColapsados = new Set();
 
-function abrirModalEventoNuevo(){
+function openModalEventoNuevo(){
   document.getElementById('event-titulo').value = '';
   document.getElementById('event-hora').value = '';
   document.getElementById('event-duracion').value = '';
@@ -1046,7 +1037,7 @@ function abrirModalEventoNuevo(){
   modal.hidden = false;
 }
 
-function abrirModalEventoEditar(eventId) {
+function openModalEventoEditar(eventId) {
   const eventos = getEventos();
   const evento = eventos.find((e) => e.id === eventId);
 
@@ -1080,17 +1071,17 @@ function abrirModalEventoEditar(eventId) {
   modal.hidden = false;
 }
 
-function cerrarModalEvento(){
+function closeModalEvento(){
   modal.hidden = true;
 }
 
-document.getElementById('add-event-btn').addEventListener('click', abrirModalEventoNuevo);
-document.getElementById('event-modal-cancel').addEventListener('click', cerrarModalEvento);
+document.getElementById('add-event-btn').addEventListener('click', openModalEventoNuevo);
+document.getElementById('event-modal-cancel').addEventListener('click', closeModalEvento);
 
 //Cierra el modal si se hace clickfuera de el
 modal.addEventListener('click',(event) =>{
   if (event.target === modal){
-    cerrarModalEvento();
+    closeModalEvento();
   }
 });
 
@@ -1170,8 +1161,8 @@ document.getElementById('event-modal-save').addEventListener('click', () =>{
 }
 
   saveEventos(eventos);
-  mostrarEventos();
-  cerrarModalEvento();
+  showEventos();
+  closeModalEvento();
 });
 
 
@@ -1192,6 +1183,8 @@ document.querySelectorAll('.nav-item').forEach((btn) => {
   });
 });
 
-mostrarProyectos();
-mostrarEventos();
-mostrarPerfil();
+// Primero se añaden los proyectos de ejemplo que falten y después se pinta
+migrateProyectosNuevos();
+showProyectos();
+showEventos();
+showPerfil();
