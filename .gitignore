@@ -1,0 +1,20 @@
+# Sistema operativo
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor: se comparte solo la configuración de Live Server
+.vscode/*
+!.vscode/settings.json
+.idea/
+
+# Ajustes locales de Claude Code (los subagentes de .claude/agents sí se suben)
+.claude/settings.local.json
+
+# Dependencias y registros (la app no usa ninguna, por si se añaden herramientas)
+node_modules/
+*.log
+.env
+
+# Copias de seguridad exportadas desde la app: contienen datos personales
+bitacora-*.json

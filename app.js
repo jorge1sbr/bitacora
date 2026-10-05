@@ -242,12 +242,28 @@ const EVENTOS_RAIZ = [
   }
 ];
 
+//===================== UTILIDADES ===================
+
+// Formatos válidos para horas ("09:05") y colores ("#4ade80")
+const HORA_VALIDA = /^([01]\d|2[0-3]):[0-5]\d$/;
+const COLOR_VALIDO = /^#[0-9a-f]{6}$/i;
+
+// Convierte los caracteres especiales de HTML en texto normal antes de meterlo con innerHTML.
+// Así, si alguien escribe "<b>hola</b>" en una tarea, se ve tal cual en vez de interpretarse como HTML
+function escapeHtml(texto){
+  return String(texto)
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;');
+}
+
 //===================== DIÁLOGOS ===================
 // Sustituyen a prompt(), confirm() y alert(). Usan el modal #dialog-modal del HTML
 
 const dialogo = document.getElementById('dialog-modal');
 const dialogoTitulo = document.getElementById('dialog-titulo');
-const dialogoMensaje = document.getElementById('dialog-mensaje');
 const dialogoCampo = document.getElementById('dialog-campo');
 const dialogoInput = document.getElementById('dialog-input');
 const dialogoError = document.getElementById('dialog-error');
@@ -265,13 +281,11 @@ function setErrorModal(elementoError, mensaje){
 
 // Abre el diálogo genérico y devuelve una promesa que se resuelve al aceptar o cancelar.
 // conInput = true: pide un texto (resuelve el texto o null). conInput = false: pide confirmación (resuelve true o false)
-function openDialogo({ titulo, mensaje = '', conInput, valorInicial = '', placeholder = '', textoBoton = 'Aceptar', peligro = false }){
+function openDialogo({ titulo, conInput, valorInicial = '', placeholder = '', textoBoton = 'Aceptar', peligro = false }){
   // Si por lo que sea ya había uno abierto, se cancela antes de abrir el nuevo
   if (dialogoAbierto !== null) dialogoAbierto.cancelar();
 
   dialogoTitulo.textContent = titulo;
-  dialogoMensaje.textContent = mensaje;
-  dialogoMensaje.hidden = mensaje === '';
   dialogoCampo.hidden = !conInput;
   dialogoInput.value = valorInicial;
   dialogoInput.placeholder = placeholder;
@@ -349,8 +363,8 @@ function buildMenuHtml(tipo, id){
     <div class="item-menu-wrapper">
       <button class="item-menu-btn" aria-label="Opciones" aria-haspopup="true">⋯</button>
       <div class="item-menu" hidden>
-        <button class="item-menu-option" data-action="editar" data-tipo="${tipo}" data-id="${id}">Editar</button>
-        <button class="item-menu-option item-menu-option-danger" data-action="borrar" data-tipo="${tipo}" data-id="${id}">Borrar</button>
+        <button class="item-menu-option" data-action="editar" data-tipo="${tipo}" data-id="${escapeHtml(id)}">Editar</button>
+        <button class="item-menu-option item-menu-option-danger" data-action="borrar" data-tipo="${tipo}" data-id="${escapeHtml(id)}">Borrar</button>
       </div>
     </div>
   `;
@@ -371,21 +385,32 @@ function closeMenus(excepto = null){
   });
 }
 
-// Un solo escuchador para todos los menús ⋯ de la app (delegación de eventos)
+// Si un menú se sale por la derecha de la pantalla (pasa en móvil con carpetas muy anidadas),
+// se abre hacia la izquierda
+function placeMenu(menu){
+  menu.classList.remove('menu-izquierda');
+  if (menu.getBoundingClientRect().right > window.innerWidth - 8) {
+    menu.classList.add('menu-izquierda');
+  }
+}
+
+// Un solo escuchador para todos los menús de la app, ⋯ y + (delegación de eventos).
+// El menú de cada botón es el elemento que va justo después de él en el HTML
 document.addEventListener('click', (event) => {
-  const boton = event.target.closest('.item-menu-btn');
-  const opcion = event.target.closest('.item-menu-option');
+  const boton = event.target.closest('.item-menu-btn, .add-item-btn');
 
   if (boton !== null) {
     const menu = boton.nextElementSibling;
     closeMenus(menu);
     menu.hidden = !menu.hidden;
+    if (!menu.hidden) placeMenu(menu);
     return;
   }
 
-  // Cualquier otro clic (en una opción o fuera) cierra los menús ⋯
-  document.querySelectorAll('.item-menu').forEach((menu) => { menu.hidden = true; });
+  // Cualquier otro clic (en una opción o fuera) cierra todos los menús
+  closeMenus();
 
+  const opcion = event.target.closest('.item-menu-option');
   if (opcion !== null) {
     const { tipo, action, id } = opcion.dataset;
     ACCIONES_MENU[tipo][action](id);
@@ -613,7 +638,7 @@ function showPerfil() {
 
     return `
       <div class="project-progress-row">
-        <span class="project-progress-name">${proyecto.nombre}</span>
+        <span class="project-progress-name">${escapeHtml(proyecto.nombre)}</span>
         <div class="project-progress-bar">
           <div class="project-progress-fill" style="width: ${pct}%"></div>
         </div>
@@ -623,13 +648,15 @@ function showPerfil() {
   }).join('');
 }
 
-//Generar las cards
+// HTML de una tarea o de una carpeta (con todo lo que tiene dentro, llamándose a sí misma)
 function buildItemHtml(item){
+  const id = escapeHtml(item.id);
+
   if(item.tipo === 'tarea'){
     const claseHecha = item.hecha ? 'done' : '';
     return `
-      <li class="task ${claseHecha}" data-task-id="${item.id}">
-        <span class="task-text">${item.texto}</span>
+      <li class="task ${claseHecha}" data-task-id="${id}">
+        <span class="task-text">${escapeHtml(item.texto)}</span>
         <span class="task-actions">
           <span class="task-checkbox"></span>
           ${buildMenuHtml('tarea', item.id)}
@@ -647,37 +674,40 @@ function buildItemHtml(item){
 
     const subitemsHtml = item.tareas.map(buildItemHtml).join('');
 
+    // La fila de la carpeta y su lista van dentro del mismo <li> (un <ul> no puede ir suelto dentro de otro <ul>)
     return `
-      <li class="task task-folder ${claseHecha}" data-folder-id="${item.id}">
-        <span class="task-text">
-          ${item.nombre} <span class="folder-count">${conteo.hechas}/${conteo.total}</span>
-          <span class="folder-meta">
-            <svg class="folder-icon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z"/>
-            </svg>
-            <span class="add-item-wrapper">
-              <button class="add-item-btn" data-folder-id="${item.id}">+</button>
-              <div class="add-item-menu" data-folder-id="${item.id}" hidden>
-                <button class="add-item-option" data-action="tarea" data-folder-id="${item.id}">Añadir tarea</button>
-                <button class="add-item-option" data-action="carpeta" data-folder-id="${item.id}">Añadir subcarpeta</button>
-              </div>
+      <li class="folder-item">
+        <div class="task task-folder ${claseHecha}" data-folder-id="${id}">
+          <span class="task-text">
+            ${escapeHtml(item.nombre)} <span class="folder-count">${conteo.hechas}/${conteo.total}</span>
+            <span class="folder-meta">
+              <svg class="folder-icon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z"/>
+              </svg>
+              <span class="add-item-wrapper">
+                <button class="add-item-btn" aria-label="Añadir">+</button>
+                <div class="add-item-menu" hidden>
+                  <button class="add-item-option" data-action="tarea" data-folder-id="${id}">Añadir tarea</button>
+                  <button class="add-item-option" data-action="carpeta" data-folder-id="${id}">Añadir subcarpeta</button>
+                </div>
+              </span>
+              <button class="collapse-btn ${flechaClase}" data-folder-id="${id}" aria-label="Plegar o desplegar">▾</button>
             </span>
-            <button class="collapse-btn ${flechaClase}" data-folder-id="${item.id}">▾</button>
           </span>
-        </span>
-        <span class="task-actions">
-          <span class="task-checkbox"></span>
-          ${buildMenuHtml('carpeta', item.id)}
-        </span>
+          <span class="task-actions">
+            <span class="task-checkbox"></span>
+            ${buildMenuHtml('carpeta', item.id)}
+          </span>
+        </div>
+        <ul class="subtask-list" ${colapsado ? 'hidden' : ''}>
+          ${subitemsHtml}
+        </ul>
       </li>
-      <ul class="subtask-list-new" ${colapsado ? 'hidden' : ''}>
-        ${subitemsHtml}
-      </ul>
     `;
   }
 }
 
-//Pintar los proyectos en pantaalla
+//Pintar los proyectos en pantalla
 function showProyectos(){
   const projects = getProyectos();
   const contenedor = document.getElementById('project-list');
@@ -700,20 +730,21 @@ function showProyectos(){
     const flechaClase = colapsado ? 'collapsed' : '';
 
     const listaTareasHtml = proyecto.tareas.map(buildItemHtml).join('');
+    const id = escapeHtml(proyecto.id);
 
     const html = `
       <article class="project-card">
         <div class="project-card-header">
           <div class="project-title-group">
-            <span class="project-name">${proyecto.nombre}</span>
+            <span class="project-name">${escapeHtml(proyecto.nombre)}</span>
             <div class="add-item-wrapper">
-              <button class="add-item-btn" data-project-id="${proyecto.id}">+</button>
-              <div class="add-item-menu" data-project-id="${proyecto.id}" hidden>
-                <button class="add-item-option" data-action="tarea" data-project-id="${proyecto.id}">Añadir tarea</button>
-                <button class="add-item-option" data-action="carpeta" data-project-id="${proyecto.id}">Añadir subcarpeta</button>
+              <button class="add-item-btn" aria-label="Añadir">+</button>
+              <div class="add-item-menu" hidden>
+                <button class="add-item-option" data-action="tarea" data-project-id="${id}">Añadir tarea</button>
+                <button class="add-item-option" data-action="carpeta" data-project-id="${id}">Añadir subcarpeta</button>
               </div>
             </div>
-            <button class="collapse-btn ${flechaClase}" data-project-id="${proyecto.id}">▾</button>
+            <button class="collapse-btn ${flechaClase}" data-project-id="${id}" aria-label="Plegar o desplegar">▾</button>
           </div>
           <div class="project-header-actions">
             <span class="project-count">${conteo.hechas} / ${conteo.total} tareas</span>
@@ -733,31 +764,37 @@ function showProyectos(){
   });
 }
 
-// ===== Funcionamiento de botones y =====
-document.getElementById('project-list').addEventListener('click',(event) =>{
-
-  const dentroDelMenuAdd = event.target.closest('.add-item-wrapper');
-  if (dentroDelMenuAdd !== null) return;
-
-  const botonCollapse = event.target.closest('.collapse-btn');
-  if (botonCollapse !== null) return;
-
-  const checkbox = event.target.closest('.task-checkbox');
-  if (checkbox != null){
-    const li = checkbox.closest('.task');
-    if (!li.classList.contains('task-folder')) {
-      toggleTarea(li.dataset.taskId);
-    }
-    // si es carpeta su estado se calcula solo
-  }
-})
-
-//Colapsar / abrir los proyectos
+// ===== Un solo escuchador para los clics dentro de la lista de proyectos (delegación de eventos) =====
+// Abrir y cerrar los menús ⋯ y + lo hace el escuchador general de MENÚS
 document.getElementById('project-list').addEventListener('click', (event) => {
-  const boton = event.target.closest('.collapse-btn');
-  if (boton === null) return;
+  const opcionAdd = event.target.closest('.add-item-option');
+  const botonPlegar = event.target.closest('.collapse-btn');
+  const checkbox = event.target.closest('.task-checkbox');
 
-  const id = boton.dataset.projectId || boton.dataset.folderId;
+  if (opcionAdd !== null) {
+    runOpcionAdd(opcionAdd.dataset);
+  } else if (botonPlegar !== null) {
+    togglePlegado(botonPlegar.dataset.projectId || botonPlegar.dataset.folderId);
+  } else if (checkbox !== null) {
+    const fila = checkbox.closest('.task');
+    // En las carpetas la casilla solo muestra el estado: se calcula sola a partir de sus tareas
+    if (!fila.classList.contains('task-folder')) toggleTarea(fila.dataset.taskId);
+  }
+});
+
+// Opción elegida en un menú "+": añadir tarea o subcarpeta a un proyecto o a una carpeta
+function runOpcionAdd({ action, projectId, folderId }){
+  if (folderId) {
+    if (action === 'tarea') addTareaEnCarpeta(folderId);
+    else addSubcarpeta(folderId);
+  } else {
+    if (action === 'tarea') addTarea(projectId);
+    else addCarpeta(projectId);
+  }
+}
+
+// Pliega o despliega un proyecto o carpeta y lo recuerda en localStorage
+function togglePlegado(id){
   if (proyectosColapsados.has(id)) {
     proyectosColapsados.delete(id);
   } else {
@@ -766,13 +803,10 @@ document.getElementById('project-list').addEventListener('click', (event) => {
 
   savePlegados();
   showProyectos();
-});
+}
 
 //Detectar clic en "+ Proyecto"
-document.getElementById('add-project-btn').addEventListener('click', () => {
-
-  addProyecto();
-});
+document.getElementById('add-project-btn').addEventListener('click', addProyecto);
 
 // Marca/desmarca una tarea como hecha
 function toggleTarea(taskId){
@@ -974,55 +1008,6 @@ async function editCarpeta(folderId){
   showTodo();
 }
 
-//Abrir/cerrar el menú "+" de un proyecto o carpeta
-document.getElementById('project-list').addEventListener('click', (event) => {
-  const botonAdd = event.target.closest('.add-item-btn');
-  const opcion = event.target.closest('.add-item-option');
-
-  document.querySelectorAll('.add-item-menu').forEach((menu) => {
-    if (!botonAdd || menu !== botonAdd.nextElementSibling) {
-      menu.hidden = true;
-    }
-  });
-
-  if (botonAdd !== null) {
-    const menu = botonAdd.nextElementSibling;
-    menu.hidden = !menu.hidden;
-    return;
-  }
-
-  if (opcion !== null) {
-    const accion = opcion.dataset.action;
-    const projectId = opcion.dataset.projectId;
-    const folderId = opcion.dataset.folderId;
-
-    if (folderId) {
-      if (accion === 'tarea') {
-        addTareaEnCarpeta(folderId);
-      } else if (accion === 'carpeta') {
-        addSubcarpeta(folderId);
-      }
-    } else {
-      if (accion === 'tarea') {
-        addTarea(projectId);
-      } else if (accion === 'carpeta') {
-        addCarpeta(projectId);
-      }
-    }
-  }
-});
-
-// Cierra cualquier menú "+" abierto si se hace clic fuera de él
-document.addEventListener('click', (event) => {
-  const dentroDelMenu = event.target.closest('.add-item-wrapper');
-  if (dentroDelMenu === null) {
-    document.querySelectorAll('.add-item-menu').forEach((menu) => {
-      menu.hidden = true;
-    });
-  }
-});
-
-
 //==========================================================================================
 //============ AGENDA =========
 //==========================================================================================
@@ -1067,7 +1052,10 @@ function showEventos(){
   eventosOrdenados.forEach((evento) => {
   const tieneAlarma = evento.alarma !== null;
   const iconoAlarma = tieneAlarma ? `<span class="alarm-icon">🔔</span>` : '';
-  const estiloColor = evento.color ? `style="border-left-color: ${evento.color}"` : '';
+  // El color solo se usa si es un #rrggbb de verdad (podría venir raro de un archivo importado)
+  const estiloColor = COLOR_VALIDO.test(evento.color || '') ? `style="border-left-color: ${evento.color}"` : '';
+  const id = escapeHtml(evento.id);
+  const titulo = escapeHtml(evento.titulo);
 
   const menuHtml = buildMenuHtml('evento', evento.id);
 
@@ -1076,8 +1064,8 @@ function showEventos(){
   if (evento.hora === null) {
     // Tarjeta sin fila de hora
     html = `
-      <article class="event-card event-card-compact" data-event-id="${evento.id}" ${estiloColor}>
-        <p class="event-title">${evento.titulo}</p>
+      <article class="event-card event-card-compact" data-event-id="${id}" ${estiloColor}>
+        <p class="event-title">${titulo}</p>
         <div class="event-header-actions">
           ${iconoAlarma}
           ${menuHtml}
@@ -1085,13 +1073,13 @@ function showEventos(){
       </article>
     `;
   } else {
-    const textoDuracion = evento.duracion !== null ? evento.duracion : '';
+    const textoDuracion = evento.duracion !== null ? escapeHtml(evento.duracion) : '';
     // Tarjeta con hora
     html = `
-      <article class="event-card" data-event-id="${evento.id}" ${estiloColor}>
+      <article class="event-card" data-event-id="${id}" ${estiloColor}>
         <div class="event-card-header">
           <span class="event-time-group">
-            <span class="event-time">${evento.hora}</span>
+            <span class="event-time">${escapeHtml(evento.hora)}</span>
             <span class="event-duration">${textoDuracion}</span>
           </span>
           <div class="event-header-actions">
@@ -1099,7 +1087,7 @@ function showEventos(){
             ${menuHtml}
           </div>
         </div>
-        <p class="event-title">${evento.titulo}</p>
+        <p class="event-title">${titulo}</p>
       </article>
     `;
   }
@@ -1410,6 +1398,130 @@ function checkAlarmas(ahora = new Date()){
 }
 
 document.getElementById('aviso-alarmas-btn').addEventListener('click', requestPermisoAlarmas);
+
+
+//==========================================================================================
+//============ COPIA DE SEGURIDAD =========
+//==========================================================================================
+
+// Muestra un mensaje bajo los botones de copia (en rojo si es un error)
+function setMensajeCopia(texto, esError){
+  const mensaje = document.getElementById('backup-mensaje');
+  mensaje.textContent = texto;
+  mensaje.classList.toggle('backup-mensaje-error', esError);
+  mensaje.hidden = false;
+}
+
+// Descarga un archivo .json con todos los datos
+function exportDatos(){
+  const copia = {
+    app: 'bitacora',
+    version: 1,
+    exportado: new Date().toISOString(),
+    proyectos: getProyectos(),
+    eventos: getEventos(),
+    desde: getFechaInicio().toISOString(),
+    plegados: [...proyectosColapsados]
+  };
+
+  // Se crea un archivo en memoria (Blob) y se "pulsa" un enlace de descarga invisible
+  const archivo = new Blob([JSON.stringify(copia, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(archivo);
+  const enlace = document.createElement('a');
+  enlace.href = url;
+  enlace.download = `bitacora-${new Date().toLocaleDateString('sv-SE')}.json`; // sv-SE da la fecha como 2026-10-05
+  enlace.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+
+  setMensajeCopia('Copia descargada.', false);
+}
+
+// Comprueba que una lista de tareas y carpetas tiene la forma correcta, a cualquier profundidad
+function validateItems(items){
+  if (!Array.isArray(items)) return false;
+
+  return items.every((item) => {
+    if (item === null || typeof item !== 'object' || typeof item.id !== 'string') return false;
+    if (item.tipo === 'tarea') return typeof item.texto === 'string' && typeof item.hecha === 'boolean';
+    if (item.tipo === 'carpeta') return typeof item.nombre === 'string' && validateItems(item.tareas); // se llama a sí misma
+    return false;
+  });
+}
+
+// Devuelve '' si la copia es válida, o un texto con el motivo si no lo es
+function validateCopia(copia){
+  if (copia === null || typeof copia !== 'object' || copia.app !== 'bitacora') {
+    return 'El archivo no es una copia de Bitácora.';
+  }
+
+  const proyectosOk = Array.isArray(copia.proyectos) && copia.proyectos.every((proyecto) =>
+    proyecto !== null && typeof proyecto.id === 'string' && typeof proyecto.nombre === 'string' && validateItems(proyecto.tareas));
+  if (!proyectosOk) return 'Los proyectos del archivo no tienen el formato esperado.';
+
+  const eventosOk = Array.isArray(copia.eventos) && copia.eventos.every((evento) =>
+    evento !== null && typeof evento.id === 'string' && typeof evento.titulo === 'string'
+    && (evento.hora === null || HORA_VALIDA.test(evento.hora))
+    && (evento.alarma === null || HORA_VALIDA.test(evento.alarma))
+    && (evento.duracion === null || typeof evento.duracion === 'string')
+    && (evento.color == null || COLOR_VALIDO.test(evento.color)));
+  if (!eventosOk) return 'Los eventos del archivo no tienen el formato esperado.';
+
+  return '';
+}
+
+// Lee un archivo .json, lo valida y, si se confirma, sustituye todos los datos por los del archivo
+async function importDatos(archivo){
+  let copia;
+  try {
+    copia = JSON.parse(await archivo.text());
+  } catch (error) {
+    setMensajeCopia('No se ha podido leer el archivo: no es un JSON válido.', true);
+    return;
+  }
+
+  const motivo = validateCopia(copia);
+  if (motivo !== '') {
+    setMensajeCopia(motivo, true);
+    return;
+  }
+
+  const confirmado = await confirmAccion({
+    mensaje: '¿Sustituir todos tus datos por los de la copia? Lo que tienes ahora se perderá.',
+    textoBoton: 'Importar',
+    peligro: true
+  });
+  if (!confirmado) return;
+
+  saveProyectos(copia.proyectos);
+  saveEventos(copia.eventos);
+
+  if (typeof copia.desde === 'string' && !isNaN(new Date(copia.desde))) {
+    localStorage.setItem('bitacora_desde', copia.desde);
+  }
+
+  proyectosColapsados.clear();
+  if (Array.isArray(copia.plegados)) copia.plegados.forEach((id) => proyectosColapsados.add(id));
+  savePlegados();
+
+  // Todos los proyectos de ejemplo cuentan como ya añadidos: si no venían en la copia, no deben reaparecer
+  saveSemillas(PROYECTOS_RAIZ.map((proyecto) => proyecto.id));
+
+  showTodo();
+  setMensajeCopia(`Datos importados: ${formatCantidad(copia.proyectos.length, 'proyecto', 'proyectos')} y ${formatCantidad(copia.eventos.length, 'evento', 'eventos')}.`, false);
+}
+
+document.getElementById('export-btn').addEventListener('click', exportDatos);
+
+// El botón visible abre el selector de archivos (el <input type="file"> está oculto)
+document.getElementById('import-btn').addEventListener('click', () => {
+  document.getElementById('import-input').click();
+});
+
+document.getElementById('import-input').addEventListener('change', (event) => {
+  const archivo = event.target.files[0];
+  event.target.value = ''; // así se puede volver a elegir el mismo archivo
+  if (archivo) importDatos(archivo);
+});
 
 
 //Cambio de pantalla mostrando/ocultando cada sección.

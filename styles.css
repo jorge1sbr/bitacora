@@ -14,6 +14,16 @@
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
+/* Cualquier elemento con el atributo hidden se oculta, aunque su clase le dé display: flex o grid */
+[hidden] { display: none !important; }
+
+/* Los botones y campos usan la misma fuente que el resto, y sin el resaltado azul al tocarlos en el móvil */
+button,
+input {
+  font-family: inherit;
+  -webkit-tap-highlight-color: transparent;
+}
+
 body {
   background: var(--bg);
   color: var(--text-primary);
@@ -60,11 +70,6 @@ body {
   border-radius: 999px;
 }
 
-.badge-level {
-  background: var(--bg-card-alt);
-  color: var(--orange);
-}
-
 .header-actions {
   display: flex;
   align-items: center;
@@ -81,21 +86,6 @@ body {
 
 .badge-add:hover {
   opacity: 0.85;
-}
-
-.streak-pill {
-  background: var(--bg-card-alt);
-  border-radius: 999px;
-  padding: 10px 16px;
-  font-size: 13px;
-  color: var(--text-secondary);
-  margin-bottom: 20px;
-  display: inline-block;
-}
-
-.streak-number {
-  color: var(--orange);
-  font-weight: 700;
 }
 
 .project-list {
@@ -121,6 +111,7 @@ body {
 .project-name {
   font-weight: 600;
   font-size: 15px;
+  overflow-wrap: anywhere;
 }
 
 .project-title-group {
@@ -128,14 +119,14 @@ body {
   align-items: center;
   gap: 6px;
   position: relative;
+  min-width: 0;
 }
 
 .add-item-wrapper {
   position: relative;
 }
 
-.add-item-btn,
-.add-subtask-btn {
+.add-item-btn {
   width: 18px;
   height: 18px;
   border-radius: 6px;
@@ -152,8 +143,7 @@ body {
   vertical-align: middle;
 }
 
-.add-item-btn:hover,
-.add-subtask-btn:hover {
+.add-item-btn:hover {
   color: var(--green);
 }
 
@@ -187,23 +177,22 @@ body {
   background: var(--bg-card);
 }
 
+/* placeMenu() añade esta clase si el menú se sale por la derecha */
+.menu-izquierda {
+  left: auto;
+  right: 0;
+}
+
 .project-header-actions {
   display: flex;
   align-items: center;
   gap: 10px;
+  flex-shrink: 0;
 }
 
 .project-count {
   font-size: 13px;
   color: var(--text-secondary);
-}
-
-.project-status {
-  font-size: 12px;
-  color: var(--text-muted);
-  background: var(--bg-card-alt);
-  padding: 3px 10px;
-  border-radius: 999px;
 }
 
 .progress-bar {
@@ -220,7 +209,6 @@ body {
 }
 
 .progress-green { background: var(--green); }
-.progress-orange { background: var(--orange); }
 
 .task-list {
   list-style: none;
@@ -240,6 +228,7 @@ body {
 .task-text {
   flex: 1;
   min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .task.done .task-text {
@@ -290,7 +279,7 @@ body {
 
 /* ===== Carpetas dentro de un proyecto ===== */
 
-.task-folder {
+.folder-item {
   margin-top: 10px;
 }
 
@@ -306,15 +295,14 @@ body {
   font-size: 12px;
 }
 
-.subtask-list-new {
+.subtask-list {
   list-style: none;
   border-left: 2px solid var(--border);
   padding-left: 12px;
-  margin-left: 1px;
+  margin: 6px 0 10px 1px;
   display: flex;
   flex-direction: column;
   gap: 6px;
-  margin-bottom: 10px;
 }
 
 .bottom-nav {
@@ -444,10 +432,6 @@ body {
   box-shadow: 0 8px 20px rgba(0,0,0,0.4);
 }
 
-.item-menu[hidden] {
-  display: none;
-}
-
 .item-menu-option {
   display: block;
   width: 100%;
@@ -492,12 +476,15 @@ body {
   font-size: 14px;
   font-weight: 600;
   color: var(--text-primary);
+  overflow-wrap: anywhere;
+  min-width: 0;
 }
 
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 12px;
+  margin-bottom: 20px;
 }
 
 .stat-card {
@@ -536,10 +523,6 @@ body {
   padding: 20px;
 }
 
-.modal-overlay[hidden] {
-  display: none;
-}
-
 .modal-box {
   background: var(--bg-card);
   border: 1px solid var(--border);
@@ -547,6 +530,8 @@ body {
   padding: 20px;
   width: 100%;
   max-width: 360px;
+  max-height: 100%; /* en pantallas bajas el modal se desplaza por dentro en vez de cortarse */
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: 14px;
@@ -563,10 +548,6 @@ body {
   gap: 6px;
   font-size: 13px;
   color: var(--text-secondary);
-}
-
-.modal-field[hidden] {
-  display: none;
 }
 
 .modal-field input {
@@ -623,11 +604,6 @@ body {
   font-size: 12px;
 }
 
-.dialog-mensaje {
-  color: var(--text-secondary);
-  font-size: 13px;
-}
-
 .modal-nota {
   color: var(--text-muted);
   font-size: 11px;
@@ -651,10 +627,6 @@ body {
   margin-bottom: 14px;
   font-size: 12px;
   color: var(--text-secondary);
-}
-
-.aviso-alarmas[hidden] {
-  display: none;
 }
 
 .aviso-alarmas-btn {
@@ -691,9 +663,6 @@ body {
   border-color: var(--border);
 }
 
-.color-borde-evento-vacio.selected {
-  border-color: var(--text-primary);
-}
 /* ===== Perfil ===== */
 
 .profile-highlight {
@@ -774,17 +743,128 @@ body {
 .collapse-btn.collapsed {
   transform: rotate(-90deg);
 }
-.task-list[hidden] {
-  display: none;
-}
-
-.subtask-list-new[hidden] {
-  display: none;
-}
-
 .folder-meta {
   display: inline-flex;
   align-items: center;
   gap: 4px;
   white-space: nowrap;
+}
+
+/* ===== Copia de seguridad (Perfil) ===== */
+
+.backup-label {
+  margin-top: 24px;
+}
+
+.backup-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.backup-btn {
+  flex: 1;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 600;
+  padding: 10px;
+  cursor: pointer;
+}
+
+.backup-btn:hover {
+  border-color: var(--text-muted);
+}
+
+.backup-mensaje {
+  color: var(--text-secondary);
+  font-size: 12px;
+  margin-top: 8px;
+}
+
+.backup-mensaje-error {
+  color: #f87171;
+}
+
+/* ===== Pantallas táctiles: zonas de toque más grandes ===== */
+
+@media (pointer: coarse) {
+  .item-menu-btn,
+  .collapse-btn {
+    min-width: 32px;
+    min-height: 32px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .add-item-btn {
+    width: 26px;
+    height: 26px;
+    font-size: 15px;
+  }
+
+  .task-checkbox {
+    width: 18px;
+    height: 18px;
+    position: relative;
+  }
+
+  /* Zona de toque invisible de 34px alrededor de la casilla (el ::after ya se usa para el tic) */
+  .task-checkbox::before {
+    content: "";
+    position: absolute;
+    inset: -8px;
+  }
+
+  .modal-field-checkbox input {
+    width: 20px;
+    height: 20px;
+  }
+
+  .task.done .task-checkbox::after {
+    width: 4px;
+    height: 8px;
+    border-width: 0 2px 2px 0;
+  }
+
+  .task-actions {
+    gap: 4px;
+    margin-right: 0;
+  }
+
+  .item-menu-option,
+  .add-item-option {
+    font-size: 14px;
+    padding: 10px;
+  }
+
+  .item-menu {
+    top: 34px;
+    width: 140px;
+  }
+
+  .add-item-menu {
+    top: 30px;
+  }
+
+  .badge {
+    padding: 8px 14px;
+    font-size: 13px;
+  }
+
+  .modal-btn-secondary,
+  .modal-btn-primary {
+    padding: 10px 16px;
+  }
+
+  .color-borde-evento {
+    width: 30px;
+    height: 30px;
+  }
+
+  .modal-field input {
+    font-size: 16px; /* con menos de 16px el iPhone hace zoom al escribir */
+  }
 }

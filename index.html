@@ -63,6 +63,15 @@
 
       <p class="profile-section-label">Progreso por proyecto</p>
       <div id="profile-project-progress"></div>
+
+      <!-- Copia de seguridad: exportar / importar todos los datos en un archivo .json -->
+      <p class="profile-section-label backup-label">Copia de seguridad</p>
+      <div class="backup-actions">
+        <button id="export-btn" class="backup-btn">Exportar JSON</button>
+        <button id="import-btn" class="backup-btn">Importar JSON</button>
+        <input type="file" id="import-input" accept=".json,application/json" hidden>
+      </div>
+      <p class="backup-mensaje" id="backup-mensaje" hidden></p>
     </main>
 
     <!-- ===== Navegación inferior ===== -->
@@ -145,7 +154,6 @@
   <div id="dialog-modal" class="modal-overlay" hidden>
     <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="dialog-titulo">
       <h2 id="dialog-titulo"></h2>
-      <p class="dialog-mensaje" id="dialog-mensaje" hidden></p>
       <label class="modal-field" id="dialog-campo" hidden>
         <input type="text" id="dialog-input">
       </label>
