@@ -242,6 +242,176 @@ const EVENTOS_RAIZ = [
   }
 ];
 
+//===================== DIÁLOGOS ===================
+// Sustituyen a prompt(), confirm() y alert(). Usan el modal #dialog-modal del HTML
+
+const dialogo = document.getElementById('dialog-modal');
+const dialogoTitulo = document.getElementById('dialog-titulo');
+const dialogoMensaje = document.getElementById('dialog-mensaje');
+const dialogoCampo = document.getElementById('dialog-campo');
+const dialogoInput = document.getElementById('dialog-input');
+const dialogoError = document.getElementById('dialog-error');
+const dialogoOk = document.getElementById('dialog-ok');
+const dialogoCancel = document.getElementById('dialog-cancel');
+
+// Guarda las funciones aceptar/cancelar del diálogo abierto (null si no hay ninguno)
+let dialogoAbierto = null;
+
+// Muestra u oculta un mensaje de error dentro de un modal. Con mensaje vacío lo oculta
+function setErrorModal(elementoError, mensaje){
+  elementoError.textContent = mensaje;
+  elementoError.hidden = mensaje === '';
+}
+
+// Abre el diálogo genérico y devuelve una promesa que se resuelve al aceptar o cancelar.
+// conInput = true: pide un texto (resuelve el texto o null). conInput = false: pide confirmación (resuelve true o false)
+function openDialogo({ titulo, mensaje = '', conInput, valorInicial = '', placeholder = '', textoBoton = 'Aceptar', peligro = false }){
+  // Si por lo que sea ya había uno abierto, se cancela antes de abrir el nuevo
+  if (dialogoAbierto !== null) dialogoAbierto.cancelar();
+
+  dialogoTitulo.textContent = titulo;
+  dialogoMensaje.textContent = mensaje;
+  dialogoMensaje.hidden = mensaje === '';
+  dialogoCampo.hidden = !conInput;
+  dialogoInput.value = valorInicial;
+  dialogoInput.placeholder = placeholder;
+  dialogoOk.textContent = textoBoton;
+  dialogoOk.classList.toggle('modal-btn-danger', peligro);
+  setErrorModal(dialogoError, '');
+
+  dialogo.hidden = false;
+  if (conInput) {
+    dialogoInput.focus();
+    dialogoInput.select();
+  } else {
+    dialogoOk.focus();
+  }
+
+  return new Promise((resolve) => {
+    function cerrar(resultado){
+      dialogo.hidden = true;
+      dialogoAbierto = null;
+      resolve(resultado);
+    }
+
+    dialogoAbierto = {
+      aceptar(){
+        if (!conInput) {
+          cerrar(true);
+          return;
+        }
+        const texto = dialogoInput.value.trim();
+        if (texto === '') {
+          setErrorModal(dialogoError, 'Escribe algo antes de guardar.');
+          dialogoInput.focus();
+          return;
+        }
+        cerrar(texto);
+      },
+      cancelar(){
+        cerrar(conInput ? null : false);
+      }
+    };
+  });
+}
+
+// Pide un texto. Devuelve el texto sin espacios sobrantes, o null si se cancela
+function askTexto({ titulo, valorInicial = '', placeholder = '' }){
+  return openDialogo({ titulo, valorInicial, placeholder, conInput: true, textoBoton: 'Guardar' });
+}
+
+// Pide confirmación. Devuelve true si se acepta y false si se cancela
+function confirmAccion({ mensaje, textoBoton = 'Aceptar', peligro = false }){
+  return openDialogo({ titulo: mensaje, conInput: false, textoBoton, peligro });
+}
+
+dialogoOk.addEventListener('click', () => {
+  if (dialogoAbierto !== null) dialogoAbierto.aceptar();
+});
+
+dialogoCancel.addEventListener('click', () => {
+  if (dialogoAbierto !== null) dialogoAbierto.cancelar();
+});
+
+// Clic en el fondo oscuro (fuera de la caja) = cancelar
+dialogo.addEventListener('click', (event) => {
+  if (event.target === dialogo && dialogoAbierto !== null) dialogoAbierto.cancelar();
+});
+
+// Al escribir, se quita el aviso de campo vacío
+dialogoInput.addEventListener('input', () => setErrorModal(dialogoError, ''));
+
+//===================== MENÚS ⋯ ===================
+// Mismo menú Editar / Borrar para proyectos, carpetas, tareas y eventos
+
+function buildMenuHtml(tipo, id){
+  return `
+    <div class="item-menu-wrapper">
+      <button class="item-menu-btn" aria-label="Opciones" aria-haspopup="true">⋯</button>
+      <div class="item-menu" hidden>
+        <button class="item-menu-option" data-action="editar" data-tipo="${tipo}" data-id="${id}">Editar</button>
+        <button class="item-menu-option item-menu-option-danger" data-action="borrar" data-tipo="${tipo}" data-id="${id}">Borrar</button>
+      </div>
+    </div>
+  `;
+}
+
+// Qué función se ejecuta según el tipo de elemento y la opción elegida
+const ACCIONES_MENU = {
+  proyecto: { editar: editProyecto, borrar: deleteProyecto },
+  carpeta:  { editar: editCarpeta,  borrar: deleteCarpeta },
+  tarea:    { editar: editTarea,    borrar: deleteTarea },
+  evento:   { editar: editEvento,   borrar: deleteEvento }
+};
+
+// Cierra todos los menús (⋯ y +) menos el que se indique
+function closeMenus(excepto = null){
+  document.querySelectorAll('.item-menu, .add-item-menu').forEach((menu) => {
+    if (menu !== excepto) menu.hidden = true;
+  });
+}
+
+// Un solo escuchador para todos los menús ⋯ de la app (delegación de eventos)
+document.addEventListener('click', (event) => {
+  const boton = event.target.closest('.item-menu-btn');
+  const opcion = event.target.closest('.item-menu-option');
+
+  if (boton !== null) {
+    const menu = boton.nextElementSibling;
+    closeMenus(menu);
+    menu.hidden = !menu.hidden;
+    return;
+  }
+
+  // Cualquier otro clic (en una opción o fuera) cierra los menús ⋯
+  document.querySelectorAll('.item-menu').forEach((menu) => { menu.hidden = true; });
+
+  if (opcion !== null) {
+    const { tipo, action, id } = opcion.dataset;
+    ACCIONES_MENU[tipo][action](id);
+  }
+});
+
+// Teclado: Enter confirma y Esc cancela el diálogo; Esc también cierra menús y el modal de evento
+document.addEventListener('keydown', (event) => {
+  if (dialogoAbierto !== null) {
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      dialogoAbierto.cancelar();
+    } else if (event.key === 'Enter' && document.activeElement !== dialogoCancel) {
+      // preventDefault evita que el Enter haga además "clic" en el botón que tenga el foco
+      event.preventDefault();
+      dialogoAbierto.aceptar();
+    }
+    return;
+  }
+
+  if (event.key === 'Escape') {
+    closeMenus();
+    if (!modal.hidden) closeModalEvento();
+  }
+});
+
 //===================== PROYECTOS ===================
 
 //Proyectos guardados como texto en localStorage
@@ -251,12 +421,12 @@ function saveProyectos(projects){
 
 }
 
-//Texto a json de nuevo 
+//Texto a json de nuevo
 function getProyectos() {
   const texto = localStorage.getItem('bitacora_projects');
 
   if (texto == null){
-    //Si no hay nada guardado todavía 
+    //Si no hay nada guardado todavía
     // Se devuelve una copia para no modificar nunca los datos de ejemplo
     saveProyectos(PROYECTOS_RAIZ);
     return structuredClone(PROYECTOS_RAIZ);
@@ -405,7 +575,7 @@ function showPerfil() {
   }).join('');
 }
 
-//Generar las cards 
+//Generar las cards
 function buildItemHtml(item){
   if(item.tipo === 'tarea'){
     const claseHecha = item.hecha ? 'done' : '';
@@ -414,11 +584,7 @@ function buildItemHtml(item){
         <span class="task-text">${item.texto}</span>
         <span class="task-actions">
           <span class="task-checkbox"></span>
-          <button class="delete-task-btn" data-task-id="${item.id}">
-            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6h16Z"/>
-            </svg>
-          </button>
+          ${buildMenuHtml('tarea', item.id)}
         </span>
       </li>
     `;
@@ -453,11 +619,7 @@ function buildItemHtml(item){
         </span>
         <span class="task-actions">
           <span class="task-checkbox"></span>
-          <button class="delete-folder-btn" data-folder-id="${item.id}">
-            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6h16Z"/>
-            </svg>
-          </button>
+          ${buildMenuHtml('carpeta', item.id)}
         </span>
       </li>
       <ul class="subtask-list-new" ${colapsado ? 'hidden' : ''}>
@@ -498,7 +660,7 @@ function showProyectos(){
           </div>
           <div class="project-header-actions">
             <span class="project-count">${conteo.hechas} / ${conteo.total} tareas</span>
-            <button class="project-menu-btn" data-project-id="${proyecto.id}">⋯</button>
+            ${buildMenuHtml('proyecto', proyecto.id)}
           </div>
         </div>
         <div class="progress-bar">
@@ -530,18 +692,6 @@ document.getElementById('project-list').addEventListener('click',(event) =>{
       toggleTarea(li.dataset.taskId);
     }
     // si es carpeta su estado se calcula solo
-    return;
-  }
-
-  const textoTarea = event.target.closest('.task-text');
-  if (textoTarea !== null){
-    const li = textoTarea.closest('.task');
-    if (li.classList.contains('task-folder')) {
-      editCarpeta(li.dataset.folderId);
-    } else {
-      editTarea(li.dataset.taskId);
-    }
-    return;
   }
 })
 
@@ -560,35 +710,10 @@ document.getElementById('project-list').addEventListener('click', (event) => {
   showProyectos();
 });
 
-//Detectar clic en "borrar tarea" 
-document.getElementById('project-list').addEventListener('click', (event) => {
-  const boton = event.target.closest('.delete-task-btn');
-  if (boton === null) return;
-
-  deleteTarea(boton.dataset.taskId);
-});
-
 //Detectar clic en "+ Proyecto"
 document.getElementById('add-project-btn').addEventListener('click', () => {
 
   addProyecto();
-});
-
-
-//Detectar clic en "borrar carpeta"
-document.getElementById('project-list').addEventListener('click', (event) => {
-  const boton = event.target.closest('.delete-folder-btn');
-  if (boton === null) return;
-
-  deleteCarpeta(boton.dataset.folderId);
-});
-
-// ===== Detectar clic en el menú de un proyecto (⋯) =====
-document.getElementById('project-list').addEventListener('click', (event) => {
-  const boton = event.target.closest('.project-menu-btn');
-  if (boton === null) return;
-
-  openMenuProyecto(boton.dataset.projectId);
 });
 
 // Marca/desmarca una tarea como hecha
@@ -604,29 +729,23 @@ function toggleTarea(taskId){
 }
 
 //Editar texto de tareas
-function editTarea(taskId){
+async function editTarea(taskId){
   const projects = getProyectos();
   const encontrado = findItem(projects, taskId);
   if (encontrado === null || encontrado.item.tipo !== 'tarea') return;
 
   const tarea = encontrado.item;
-  const nuevoTexto = prompt('Editar tarea:', tarea.texto);
+  const nuevoTexto = await askTexto({ titulo: 'Editar tarea', valorInicial: tarea.texto });
+  if (nuevoTexto === null) return;
 
-  if(nuevoTexto === null || nuevoTexto.trim() === ''){
-    return;
-  }
-
-  tarea.texto = nuevoTexto.trim();
+  tarea.texto = nuevoTexto;
   saveProyectos(projects);
   showProyectos();
 }
 
-function addTarea(projectId){
-  const texto = prompt('Nueva tarea:');
-
-  if(texto === null || texto.trim() === ''){
-    return
-  }
+async function addTarea(projectId){
+  const texto = await askTexto({ titulo: 'Nueva tarea', placeholder: 'ej. Repasar el módulo 3' });
+  if (texto === null) return;
 
   const projects = getProyectos();
 
@@ -635,7 +754,7 @@ function addTarea(projectId){
       proyecto.tareas.push({
         id: crypto.randomUUID(),
         tipo: 'tarea',
-        texto: texto.trim(),
+        texto: texto,
         hecha: false
       });
     }
@@ -645,12 +764,9 @@ function addTarea(projectId){
   showProyectos();
 }
 
-function addTareaEnCarpeta(folderId) {
-  const texto = prompt('Nueva tarea:');
-
-  if (texto === null || texto.trim() === '') {
-    return;
-  }
+async function addTareaEnCarpeta(folderId) {
+  const texto = await askTexto({ titulo: 'Nueva tarea', placeholder: 'ej. Repasar el módulo 3' });
+  if (texto === null) return;
 
   const projects = getProyectos();
   const encontrado = findItem(projects, folderId);
@@ -659,7 +775,7 @@ function addTareaEnCarpeta(folderId) {
   encontrado.item.tareas.push({
     id: crypto.randomUUID(),
     tipo: 'tarea',
-    texto: texto.trim(),
+    texto: texto,
     hecha: false
   });
 
@@ -667,8 +783,8 @@ function addTareaEnCarpeta(folderId) {
   showProyectos();
 }
 
-function deleteTarea(taskId){
-  const confirmado = confirm('¿Borrar esta tarea?');
+async function deleteTarea(taskId){
+  const confirmado = await confirmAccion({ mensaje: '¿Borrar esta tarea?', textoBoton: 'Borrar', peligro: true });
   if(!confirmado) return;
 
   const projects = getProyectos();
@@ -680,12 +796,9 @@ function deleteTarea(taskId){
   showProyectos();
 }
 
-function addCarpeta(projectId) {
-  const nombre = prompt('Nombre de la carpeta:');
-
-  if (nombre === null || nombre.trim() === '') {
-    return;
-  }
+async function addCarpeta(projectId) {
+  const nombre = await askTexto({ titulo: 'Nueva carpeta', placeholder: 'Nombre de la carpeta' });
+  if (nombre === null) return;
 
   const projects = getProyectos();
 
@@ -694,7 +807,7 @@ function addCarpeta(projectId) {
       proyecto.tareas.push({
         id: crypto.randomUUID(),
         tipo: 'carpeta',
-        nombre: nombre.trim(),
+        nombre: nombre,
         tareas: []
       });
     }
@@ -704,12 +817,9 @@ function addCarpeta(projectId) {
   showProyectos();
 }
 
-function addSubcarpeta(folderId) {
-  const nombre = prompt('Nombre de la subcarpeta:');
-
-  if (nombre === null || nombre.trim() === '') {
-    return;
-  }
+async function addSubcarpeta(folderId) {
+  const nombre = await askTexto({ titulo: 'Nueva subcarpeta', placeholder: 'Nombre de la subcarpeta' });
+  if (nombre === null) return;
 
   const projects = getProyectos();
   const encontrado = findItem(projects, folderId);
@@ -718,7 +828,7 @@ function addSubcarpeta(folderId) {
   encontrado.item.tareas.push({
     id: crypto.randomUUID(),
     tipo: 'carpeta',
-    nombre: nombre.trim(),
+    nombre: nombre,
     tareas: []
   });
 
@@ -726,8 +836,8 @@ function addSubcarpeta(folderId) {
   showProyectos();
 }
 
-function deleteCarpeta(folderId) {
-  const confirmado = confirm('¿Borrar esta carpeta y todas sus tareas de dentro?');
+async function deleteCarpeta(folderId) {
+  const confirmado = await confirmAccion({ mensaje: '¿Borrar esta carpeta y todo lo que tiene dentro?', textoBoton: 'Borrar', peligro: true });
   if (!confirmado) return;
 
   const projects = getProyectos();
@@ -738,37 +848,22 @@ function deleteCarpeta(folderId) {
   showProyectos();
 }
 
-function addProyecto(){
-  const nombre = prompt('Nombre del proyecto:');
-
-  if (nombre === null || nombre.trim() === ''){
-    return;
-  }
+async function addProyecto(){
+  const nombre = await askTexto({ titulo: 'Nuevo proyecto', placeholder: 'Nombre del proyecto' });
+  if (nombre === null) return;
 
   const projects = getProyectos();
 
   projects.push({
     id: crypto.randomUUID(),
-    nombre: nombre.trim(),
+    nombre: nombre,
     tareas: []
   });
   saveProyectos(projects);
   showProyectos();
 }
 
-function openMenuProyecto(projectId){
-  const accion = prompt('Escribe "editar" para renombrar el proyecto o "borrar" para eliminarlo');
-
-  if (accion === null) return;
-
-  if (accion.trim().toLowerCase() === 'editar'){
-    editProyecto(projectId);
-  } else if (accion.trim().toLowerCase() === 'borrar'){
-    deleteProyecto(projectId)
-  }
-}
-
-function editProyecto(projectId){
+async function editProyecto(projectId){
   const proyectos = getProyectos();
   let proyectoEncontrado = null;
 
@@ -777,20 +872,19 @@ function editProyecto(projectId){
       proyectoEncontrado = proyecto;
     }
   });
-  
+
   if (proyectoEncontrado === null) return;
 
-  const nuevoNombre = prompt('Nuevo nombre del proyecto:', proyectoEncontrado.nombre);
-  
-  if(nuevoNombre === null || nuevoNombre.trim()=== '') return;
+  const nuevoNombre = await askTexto({ titulo: 'Renombrar proyecto', valorInicial: proyectoEncontrado.nombre });
+  if (nuevoNombre === null) return;
 
-  proyectoEncontrado.nombre = nuevoNombre.trim();
+  proyectoEncontrado.nombre = nuevoNombre;
   saveProyectos(proyectos);
   showProyectos();
 }
 
-function deleteProyecto(projectId){
-  const confirmado = confirm('¿Borrar este proyecto y todas sus tareas?')
+async function deleteProyecto(projectId){
+  const confirmado = await confirmAccion({ mensaje: '¿Borrar este proyecto y todas sus tareas?', textoBoton: 'Borrar', peligro: true });
   if(!confirmado) return;
 
   let proyectos = getProyectos();
@@ -800,22 +894,21 @@ function deleteProyecto(projectId){
   showProyectos();
 }
 
-function editCarpeta(folderId){
+async function editCarpeta(folderId){
   const proyectos = getProyectos();
   const encontrado = findItem(proyectos, folderId);
   if (encontrado === null || encontrado.item.tipo !== 'carpeta') return;
 
   const carpetaEncontrada = encontrado.item;
-  const nuevoNombre = prompt('Nuevo nombre de la carpeta: ', carpetaEncontrada.nombre);
+  const nuevoNombre = await askTexto({ titulo: 'Renombrar carpeta', valorInicial: carpetaEncontrada.nombre });
+  if (nuevoNombre === null) return;
 
-  if(nuevoNombre === null || nuevoNombre.trim() === '') return;
-
-  carpetaEncontrada.nombre = nuevoNombre.trim();
+  carpetaEncontrada.nombre = nuevoNombre;
   saveProyectos(proyectos);
   showProyectos();
 }
 
-//Abrir/cerrar el menú "+" de un proyecto o carpeta 
+//Abrir/cerrar el menú "+" de un proyecto o carpeta
 document.getElementById('project-list').addEventListener('click', (event) => {
   const botonAdd = event.target.closest('.add-item-btn');
   const opcion = event.target.closest('.add-item-option');
@@ -905,15 +998,7 @@ function showEventos(){
   const iconoAlarma = tieneAlarma ? `<span class="alarm-icon">🔔</span>` : '';
   const estiloColor = evento.color ? `style="border-left-color: ${evento.color}"` : '';
 
-  const menuHtml = `
-    <div class="event-menu-wrapper">
-      <button class="event-menu-btn" data-event-id="${evento.id}">⋯</button>
-      <div class="event-menu" data-event-id="${evento.id}" hidden>
-        <button class="event-menu-option" data-action="editar" data-event-id="${evento.id}">Editar</button>
-        <button class="event-menu-option event-menu-option-danger" data-action="borrar" data-event-id="${evento.id}">Borrar</button>
-      </div>
-    </div>
-  `;
+  const menuHtml = buildMenuHtml('evento', evento.id);
 
   let html;
 
@@ -951,51 +1036,10 @@ function showEventos(){
   contenedor.innerHTML += html;
 });
 
-} 
+}
 
-document.getElementById('agenda-list').addEventListener('click', (event) => {
-  const botonMenu = event.target.closest('.event-menu-btn');
-  const opcion = event.target.closest('.event-menu-option');
-
-  //Cerrar otros menús abiertos
-  document.querySelectorAll('.event-menu').forEach((menu) => {
-    if (!botonMenu || menu !== botonMenu.nextElementSibling) {
-      menu.hidden = true;
-    }
-  });
-
-  //Abrir menú interno se se pulso
-  if (botonMenu !== null) {
-    const menu = botonMenu.nextElementSibling;
-    menu.hidden = !menu.hidden;
-    return;
-  }
-
-  if (opcion !== null) {
-    const accion = opcion.dataset.action;
-    const eventId = opcion.dataset.eventId;
-    if (accion === 'editar') {
-      editEvento(eventId);
-    } else if (accion === 'borrar') {
-      deleteEvento(eventId);
-    }
-  }
-});
-
-//Escuchador sobre todo el doc
-document.addEventListener('click', (event) => {
-  const dentroDelMenu = event.target.closest('.event-menu-wrapper');
-
-  //Cerrar menú si el click fue fuera 
-  if (dentroDelMenu === null) {
-    document.querySelectorAll('.event-menu').forEach((menu) => {
-      menu.hidden = true;
-    });
-  }
-});
-
-function deleteEvento(eventId) {
-  const confirmado = confirm('¿Borrar este evento?');
+async function deleteEvento(eventId) {
+  const confirmado = await confirmAccion({ mensaje: '¿Borrar este evento?', textoBoton: 'Borrar', peligro: true });
   if (!confirmado) return;
 
   let eventos = getEventos();
@@ -1014,6 +1058,7 @@ const inputSinHora = document.getElementById('event-sin-hora');
 const campoHora = document.getElementById('event-hora-field');
 const inputTieneAlarma = document.getElementById('event-tiene-alarma');
 const campoAlarma = document.getElementById('event-alarma-field');
+const errorEvento = document.getElementById('event-modal-error');
 let eventoEditandoId = null;
 const proyectosColapsados = new Set();
 
@@ -1033,8 +1078,10 @@ function openModalEventoNuevo(){
 
   eventoEditandoId = null;
   document.getElementById('event-modal-title').textContent = 'Nuevo evento';
+  setErrorModal(errorEvento, '');
 
   modal.hidden = false;
+  document.getElementById('event-titulo').focus();
 }
 
 function openModalEventoEditar(eventId) {
@@ -1045,6 +1092,7 @@ function openModalEventoEditar(eventId) {
 
   eventoEditandoId = eventId;
   document.getElementById('event-modal-title').textContent = 'Editar evento';
+  setErrorModal(errorEvento, '');
 
   document.getElementById('event-titulo').value = evento.titulo;
   document.getElementById('event-duracion').value = evento.duracion || '';
@@ -1090,7 +1138,7 @@ inputSinHora.addEventListener('change', ()=>{
   campoHora.hidden = inputSinHora.checked;
 });
 
-//Mostrar/ocultar el campo de alarma 
+//Mostrar/ocultar el campo de alarma
 inputTieneAlarma.addEventListener('change', ()=>{
   campoAlarma.hidden = !inputTieneAlarma.checked;
 });
@@ -1104,12 +1152,13 @@ document.getElementById('event-color-swatches').addEventListener('click', (event
   colorBorde.classList.add('selected');
 });
 
-//escuchador guardar 
+//escuchador guardar
 document.getElementById('event-modal-save').addEventListener('click', () =>{
   const titulo = document.getElementById('event-titulo').value.trim();
 
   if (titulo === ''){
-    alert('El evento necesita un título')
+    setErrorModal(errorEvento, 'El evento necesita un título.');
+    document.getElementById('event-titulo').focus();
     return;
   }
 
@@ -1117,7 +1166,7 @@ document.getElementById('event-modal-save').addEventListener('click', () =>{
   const horaValor = document.getElementById('event-hora').value;
 
   if(!sinHora && horaValor === ''){
-    alert('Pon una hora o marca "Sin hora fija"');
+    setErrorModal(errorEvento, 'Pon una hora o marca "Sin hora fija".');
     return;
   }
 
@@ -1130,7 +1179,7 @@ document.getElementById('event-modal-save').addEventListener('click', () =>{
   const alarmaValor = document.getElementById('event-alarma').value ;
 
   if (tieneAlarma && alarmaValor === '') {
-    alert('Pon una hora para la alarma, o desmarca "Poner alarma".');
+    setErrorModal(errorEvento, 'Pon una hora para la alarma o desmarca "Poner alarma".');
     return;
   }
 

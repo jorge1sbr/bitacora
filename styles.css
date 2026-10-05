@@ -197,20 +197,6 @@ body {
   color: var(--text-secondary);
 }
 
-.project-menu-btn {
-  background: none;
-  border: none;
-  color: var(--text-muted);
-  font-size: 16px;
-  cursor: pointer;
-  padding: 0;
-  line-height: 1;
-}
-
-.project-menu-btn:hover {
-  color: var(--text-primary);
-}
-
 .project-status {
   font-size: 12px;
   color: var(--text-muted);
@@ -253,7 +239,6 @@ body {
 .task-text {
   flex: 1;
   min-width: 0;
-  cursor: pointer;
 }
 
 .task.done .task-text {
@@ -309,37 +294,6 @@ body {
   flex-direction: column;
   gap: 6px;
   margin-bottom: 10px;
-}
-
-.delete-task-btn,
-.delete-folder-btn {
-  background: none;
-  border: none;
-  color: var(--text-muted);
-  cursor: pointer;
-  padding: 0;
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  opacity: 0;
-  transition: opacity 0.15s, color 0.15s;
-}
-
-.task:hover .delete-task-btn,
-.task:hover .delete-folder-btn {
-  opacity: 1;
-}
-
-.delete-task-btn:hover,
-.delete-folder-btn:hover {
-  color: #ef4444;
-}
-
-@media (hover: none) {
-  .delete-task-btn,
-  .delete-folder-btn {
-    opacity: 0.45;
-  }
 }
 
 .bottom-nav {
@@ -434,27 +388,29 @@ body {
   filter: grayscale(1) opacity(0.6);
 }
 
-.event-menu-wrapper {
+/* ===== Menú ⋯ (Editar / Borrar) de proyectos, carpetas, tareas y eventos ===== */
+
+.item-menu-wrapper {
   position: relative;
   display: flex;
   align-items: center;
 }
 
-.event-menu-btn {
+.item-menu-btn {
   background: none;
   border: none;
   color: var(--text-muted);
   font-size: 16px;
   cursor: pointer;
-  padding: 0;
+  padding: 0 2px;
   line-height: 1;
 }
 
-.event-menu-btn:hover {
+.item-menu-btn:hover {
   color: var(--text-primary);
 }
 
-.event-menu {
+.item-menu {
   position: absolute;
   top: 22px;
   right: 0;
@@ -467,11 +423,11 @@ body {
   box-shadow: 0 8px 20px rgba(0,0,0,0.4);
 }
 
-.event-menu[hidden] {
+.item-menu[hidden] {
   display: none;
 }
 
-.event-menu-option {
+.item-menu-option {
   display: block;
   width: 100%;
   text-align: left;
@@ -484,12 +440,31 @@ body {
   cursor: pointer;
 }
 
-.event-menu-option:hover {
+.item-menu-option:hover {
   background: var(--bg-card);
 }
 
-.event-menu-option-danger {
+.item-menu-option-danger {
   color: #ef4444;
+}
+
+/* En escritorio el ⋯ de tareas y carpetas aparece al pasar el ratón.
+   En táctil (sin hover) siempre está visible */
+@media (hover: hover) {
+  .task .item-menu-btn {
+    opacity: 0;
+    transition: opacity 0.15s;
+  }
+
+  .task:hover .item-menu-btn,
+  .task .item-menu-btn:focus-visible {
+    opacity: 1;
+  }
+
+  /* Regla aparte: si un navegador no entiende :has, solo se pierde esta */
+  .task .item-menu-wrapper:has(.item-menu:not([hidden])) .item-menu-btn {
+    opacity: 1;
+  }
 }
 
 .event-title {
@@ -615,6 +590,21 @@ body {
 .modal-btn-primary {
   background: var(--green);
   color: var(--bg);
+}
+
+.modal-btn-danger {
+  background: #ef4444;
+  color: #fff;
+}
+
+.modal-error {
+  color: #f87171;
+  font-size: 12px;
+}
+
+.dialog-mensaje {
+  color: var(--text-secondary);
+  font-size: 13px;
 }
 
 .color-bordes-evento {
