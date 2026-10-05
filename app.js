@@ -436,6 +436,41 @@ function getProyectos() {
   return projects;
 }
 
+// Fecha del primer uso de la app. La primera vez que se pide se guarda la fecha actual
+function getFechaInicio() {
+  let texto = localStorage.getItem('bitacora_desde');
+  if (texto == null) {
+    texto = new Date().toISOString();
+    localStorage.setItem('bitacora_desde', texto);
+  }
+  return new Date(texto);
+}
+
+// true si la fecha (texto ISO) cae en el día de hoy, según la hora local
+function isHoy(fechaIso) {
+  if (!fechaIso) return false;
+  return new Date(fechaIso).toDateString() === new Date().toDateString();
+}
+
+// Devuelve "1 tarea" / "3 tareas": número + palabra en singular o plural
+function formatCantidad(numero, singular, plural) {
+  return `${numero} ${numero === 1 ? singular : plural}`;
+}
+
+// Ids de proyectos y carpetas plegados (clave aparte, se mantiene al recargar)
+function getPlegados() {
+  const texto = localStorage.getItem('bitacora_plegados');
+  if (texto == null) return [];
+  return JSON.parse(texto);
+}
+
+function savePlegados() {
+  localStorage.setItem('bitacora_plegados', JSON.stringify([...proyectosColapsados]));
+}
+
+// Guarda qué proyectos y carpetas están plegados. Se rellena con lo guardado al cargar
+const proyectosColapsados = new Set(getPlegados());
+
 // Ids de los proyectos de ejemplo que ya se añadieron alguna vez (clave aparte para no tocar bitacora_projects)
 function getSemillas() {
   const texto = localStorage.getItem('bitacora_semillas');
@@ -475,24 +510,28 @@ function migrateProyectosNuevos() {
   saveSemillas(semillasAplicadas);
 }
 
-// Cuenta tareas totales y hechas de una lista, incluyendo las que están dentro de carpetas
+// Cuenta tareas totales, hechas y completadas hoy de una lista, incluyendo las que están dentro de carpetas
 function countTareas(items){
   let total = 0;
   let hechas = 0;
+  let hoy = 0;
 
   items.forEach((item) =>{
     if(item.tipo === 'tarea'){
       total++;
       if(item.hecha){
         hechas++;
+        // Las tareas antiguas no tienen fechaCompletada: cuentan como hechas pero no como "de hoy"
+        if (isHoy(item.fechaCompletada)) hoy++;
       }
     } else if (item.tipo === 'carpeta'){
       const resultado = countTareas(item.tareas); // se llama a sí misma con las tareas de dentro de la carpeta
       total += resultado.total;
       hechas += resultado.hechas;
+      hoy += resultado.hoy;
     }
   });
-    return { total, hechas};
+  return { total, hechas, hoy };
 }
 
 // Busca un item por id a cualquier profundidad.
@@ -530,16 +569,25 @@ function showPerfil() {
 
   let tareasTotales = 0;
   let tareasHechas = 0;
+  let tareasHoy = 0;
 
   proyectos.forEach((proyecto) => {
     const conteo = countTareas(proyecto.tareas);
     tareasTotales += conteo.total;
     tareasHechas += conteo.hechas;
+    tareasHoy += conteo.hoy;
   });
 
   const tareasPendientes = tareasTotales - tareasHechas;
   const porcentaje = tareasTotales === 0 ? 0 : Math.round((tareasHechas / tareasTotales) * 100);
 
+  // "Desde agosto 2026": mes en letra + año de la fecha del primer uso
+  const fechaInicio = getFechaInicio();
+  const mes = fechaInicio.toLocaleDateString('es-ES', { month: 'long' });
+  document.getElementById('perfil-desde').textContent = `Desde ${mes} ${fechaInicio.getFullYear()}`;
+
+  document.getElementById('profile-completadas-hoy').textContent =
+    `${formatCantidad(tareasHoy, 'tarea completada', 'tareas completadas')} hoy`;
   document.getElementById('profile-percent').textContent = `${porcentaje}%`;
 
   const contenedorStats = document.getElementById('profile-stats');
@@ -636,6 +684,15 @@ function showProyectos(){
 
   contenedor.innerHTML = '';
 
+  // Subtítulo: tareas sin hacer de todos los proyectos
+  let pendientes = 0;
+  projects.forEach((proyecto) => {
+    const conteo = countTareas(proyecto.tareas);
+    pendientes += conteo.total - conteo.hechas;
+  });
+  document.getElementById('proyectos-pendientes').textContent =
+    formatCantidad(pendientes, 'pendiente', 'pendientes');
+
   projects.forEach((proyecto) => {
     const conteo = countTareas(proyecto.tareas);
     const porcentaje = conteo.total === 0 ? 0 : (conteo.hechas / conteo.total) * 100;
@@ -707,6 +764,7 @@ document.getElementById('project-list').addEventListener('click', (event) => {
     proyectosColapsados.add(id);
   }
 
+  savePlegados();
   showProyectos();
 });
 
@@ -722,10 +780,18 @@ function toggleTarea(taskId){
   const encontrado = findItem(projects, taskId);
   if (encontrado === null || encontrado.item.tipo !== 'tarea') return;
 
-  encontrado.item.hecha = !encontrado.item.hecha;
+  const tarea = encontrado.item;
+  tarea.hecha = !tarea.hecha;
+
+  // Al marcar se guarda cuándo; al desmarcar se borra la fecha
+  if (tarea.hecha) {
+    tarea.fechaCompletada = new Date().toISOString();
+  } else {
+    delete tarea.fechaCompletada;
+  }
 
   saveProyectos(projects);
-  showProyectos();
+  showTodo();
 }
 
 //Editar texto de tareas
@@ -740,7 +806,7 @@ async function editTarea(taskId){
 
   tarea.texto = nuevoTexto;
   saveProyectos(projects);
-  showProyectos();
+  showTodo();
 }
 
 async function addTarea(projectId){
@@ -761,7 +827,7 @@ async function addTarea(projectId){
   });
 
   saveProyectos(projects);
-  showProyectos();
+  showTodo();
 }
 
 async function addTareaEnCarpeta(folderId) {
@@ -780,7 +846,7 @@ async function addTareaEnCarpeta(folderId) {
   });
 
   saveProyectos(projects);
-  showProyectos();
+  showTodo();
 }
 
 async function deleteTarea(taskId){
@@ -793,7 +859,7 @@ async function deleteTarea(taskId){
 
   // Se guarda y se repinta una sola vez, fuera de cualquier bucle
   saveProyectos(projects);
-  showProyectos();
+  showTodo();
 }
 
 async function addCarpeta(projectId) {
@@ -814,7 +880,7 @@ async function addCarpeta(projectId) {
   });
 
   saveProyectos(projects);
-  showProyectos();
+  showTodo();
 }
 
 async function addSubcarpeta(folderId) {
@@ -833,7 +899,7 @@ async function addSubcarpeta(folderId) {
   });
 
   saveProyectos(projects);
-  showProyectos();
+  showTodo();
 }
 
 async function deleteCarpeta(folderId) {
@@ -845,7 +911,7 @@ async function deleteCarpeta(folderId) {
   if (!borrado) return;
 
   saveProyectos(projects);
-  showProyectos();
+  showTodo();
 }
 
 async function addProyecto(){
@@ -860,7 +926,7 @@ async function addProyecto(){
     tareas: []
   });
   saveProyectos(projects);
-  showProyectos();
+  showTodo();
 }
 
 async function editProyecto(projectId){
@@ -880,7 +946,7 @@ async function editProyecto(projectId){
 
   proyectoEncontrado.nombre = nuevoNombre;
   saveProyectos(proyectos);
-  showProyectos();
+  showTodo();
 }
 
 async function deleteProyecto(projectId){
@@ -891,7 +957,7 @@ async function deleteProyecto(projectId){
   proyectos = proyectos.filter((proyecto) => proyecto.id !== projectId);
 
   saveProyectos(proyectos);
-  showProyectos();
+  showTodo();
 }
 
 async function editCarpeta(folderId){
@@ -905,7 +971,7 @@ async function editCarpeta(folderId){
 
   carpetaEncontrada.nombre = nuevoNombre;
   saveProyectos(proyectos);
-  showProyectos();
+  showTodo();
 }
 
 //Abrir/cerrar el menú "+" de un proyecto o carpeta
@@ -992,6 +1058,11 @@ function showEventos(){
 
   contenedor.innerHTML = '';
 
+  // Cabecera: "Hoy, 5 de agosto" y número real de eventos
+  const fechaHoy = new Date().toLocaleDateString('es-ES', { day: 'numeric', month: 'long' });
+  document.getElementById('agenda-fecha').textContent = `Hoy, ${fechaHoy}`;
+  document.getElementById('agenda-contador').textContent = formatCantidad(eventos.length, 'evento', 'eventos');
+
   //Ordenar los eventos en función de la hora y 2 cards si hay o no hora definida
   eventosOrdenados.forEach((evento) => {
   const tieneAlarma = evento.alarma !== null;
@@ -1046,7 +1117,7 @@ async function deleteEvento(eventId) {
   eventos = eventos.filter((evento) => evento.id !== eventId);
 
   saveEventos(eventos);
-  showEventos();
+  showTodo();
 }
 
 function editEvento(eventId) {
@@ -1060,7 +1131,6 @@ const inputTieneAlarma = document.getElementById('event-tiene-alarma');
 const campoAlarma = document.getElementById('event-alarma-field');
 const errorEvento = document.getElementById('event-modal-error');
 let eventoEditandoId = null;
-const proyectosColapsados = new Set();
 
 function openModalEventoNuevo(){
   document.getElementById('event-titulo').value = '';
@@ -1210,7 +1280,7 @@ document.getElementById('event-modal-save').addEventListener('click', () =>{
 }
 
   saveEventos(eventos);
-  showEventos();
+  showTodo();
   closeModalEvento();
 });
 
@@ -1232,8 +1302,14 @@ document.querySelectorAll('.nav-item').forEach((btn) => {
   });
 });
 
+// Repinta todas las pantallas desde los datos guardados. Se llama después de cualquier cambio,
+// así Perfil y las cabeceras siempre están al día
+function showTodo(){
+  showProyectos();
+  showEventos();
+  showPerfil();
+}
+
 // Primero se añaden los proyectos de ejemplo que falten y después se pinta
 migrateProyectosNuevos();
-showProyectos();
-showEventos();
-showPerfil();
+showTodo();

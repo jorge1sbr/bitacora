@@ -7,6 +7,7 @@
   --text-secondary: #8b93a1;
   --text-muted: #5c6472;
   --green: #4ade80;
+  --green-soft: #2f6b47;
   --orange: #f5a623;
   --radius: 14px;
 }
@@ -260,11 +261,31 @@ body {
   border: 1.5px solid var(--text-muted);
   flex-shrink: 0;
   cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
+/* Casilla marcada: verde más tenue y tic dibujado con dos bordes girados */
 .task.done .task-checkbox {
-  background: var(--green);
-  border-color: var(--green);
+  background: var(--green-soft);
+  border-color: var(--green-soft);
+}
+
+.task.done .task-checkbox::after {
+  content: "";
+  width: 3px;
+  height: 6px;
+  border: solid var(--text-primary);
+  border-width: 0 1.5px 1.5px 0;
+  transform: rotate(45deg);
+  margin-top: -1px;
+}
+
+/* Tarea hecha: texto tachado y más apagado (las carpetas solo se apagan, no se tachan) */
+.task.done:not(.task-folder) .task-text {
+  text-decoration: line-through;
+  opacity: 0.6;
 }
 
 /* ===== Carpetas dentro de un proyecto ===== */

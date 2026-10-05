@@ -15,7 +15,7 @@
       <header class="screen-header">
         <div>
           <h1>Tus proyectos</h1>
-          <p class="subtitle" id="pendientes-hoy">3 pendientes hoy</p>
+          <p class="subtitle" id="proyectos-pendientes"></p>
         </div>
         <div class="header-actions">
           <button id="add-project-btn" class="badge badge-add">+ Proyecto</button>
@@ -30,8 +30,8 @@
     <main class="screen" id="screen-agenda" hidden>
       <header class="screen-header">
         <div>
-          <h1>Hoy, 5 de agosto</h1>
-          <p class="subtitle">4 eventos</p>
+          <h1 id="agenda-fecha">Hoy</h1>
+          <p class="subtitle" id="agenda-contador"></p>
         </div>
         <button id="add-event-btn" class="badge badge-add">+ Evento</button>
       </header>
@@ -44,12 +44,12 @@
       <header class="screen-header">
         <div>
           <h1>Bitácora</h1>
-          <p class="subtitle">Desde agosto 2026</p>
+          <p class="subtitle" id="perfil-desde"></p>
         </div>
       </header>
 
       <div class="profile-highlight">
-        <p class="profile-highlight-sub" id="profile-completadas-hoy">2 tareas completadas hoy</p>
+        <p class="profile-highlight-sub" id="profile-completadas-hoy"></p>
         <p class="profile-highlight-percent" id="profile-percent">0%</p>
       </div>
 
