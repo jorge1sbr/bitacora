@@ -628,6 +628,46 @@ body {
   font-size: 13px;
 }
 
+.modal-nota {
+  color: var(--text-muted);
+  font-size: 11px;
+}
+
+.modal-aviso {
+  color: var(--orange);
+  font-size: 11px;
+}
+
+/* ===== Aviso de alarmas en la Agenda ===== */
+
+.aviso-alarmas {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  border: 1px dashed var(--border);
+  border-radius: 10px;
+  padding: 8px 12px;
+  margin-bottom: 14px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.aviso-alarmas[hidden] {
+  display: none;
+}
+
+.aviso-alarmas-btn {
+  background: var(--bg-card-alt);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--text-primary);
+  font-size: 12px;
+  padding: 4px 10px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
 .color-bordes-evento {
   display: flex;
   gap: 10px;

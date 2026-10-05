@@ -1107,6 +1107,7 @@ function showEventos(){
   contenedor.innerHTML += html;
 });
 
+  showAvisoAlarmas();
 }
 
 async function deleteEvento(eventId) {
@@ -1211,6 +1212,8 @@ inputSinHora.addEventListener('change', ()=>{
 //Mostrar/ocultar el campo de alarma
 inputTieneAlarma.addEventListener('change', ()=>{
   campoAlarma.hidden = !inputTieneAlarma.checked;
+  // Primera vez que se activa una alarma: se pide permiso para notificaciones
+  if (inputTieneAlarma.checked) requestPermisoAlarmas();
 });
 
 //Elegir colores del evento
@@ -1282,7 +1285,131 @@ document.getElementById('event-modal-save').addEventListener('click', () =>{
   saveEventos(eventos);
   showTodo();
   closeModalEvento();
+
+  if (alarma !== null) requestPermisoAlarmas();
 });
+
+
+//==========================================================================================
+//============ ALARMAS =========
+//==========================================================================================
+// Avisos con la Web Notifications API.
+// LIMITACIÓN: solo suenan con Bitácora abierta en una pestaña del navegador (aunque esté en segundo plano).
+// Si se cierra la pestaña o el navegador no hay aviso: para eso haría falta un service worker con
+// notificaciones push y un servidor que las envíe. Además, Chrome en Android y Safari en iPhone no
+// muestran notificaciones creadas así desde una página normal.
+
+// Minutos de margen: si el navegador retrasa la comprobación (pasa con pestañas en segundo plano),
+// la alarma suena igual aunque se compruebe un poco tarde
+const MINUTOS_MARGEN_ALARMA = 2;
+
+// Estado del permiso: 'granted' (concedido), 'denied' (bloqueado), 'default' (aún no se ha preguntado),
+// 'no-soportado' o 'archivo-local' (app abierta con doble clic en index.html: con file:// el navegador
+// nunca concede el permiso, así que ni se pide)
+function getPermisoAlarmas(){
+  if (location.protocol === 'file:') return 'archivo-local';
+  if (!('Notification' in window)) return 'no-soportado';
+  return Notification.permission;
+}
+
+// Pide permiso solo si aún no se ha preguntado. El navegador exige que se llame como respuesta a un clic
+async function requestPermisoAlarmas(){
+  if (getPermisoAlarmas() === 'default') {
+    await Notification.requestPermission();
+  }
+  showAvisoAlarmas();
+}
+
+// Si el permiso cambia por fuera de la app (icono del candado o de la campana en la barra de direcciones),
+// se actualiza el aviso. navigator.permissions no existe en todos los navegadores, por eso se comprueba antes
+function watchPermisoAlarmas(){
+  if (!navigator.permissions || !navigator.permissions.query) return;
+
+  navigator.permissions.query({ name: 'notifications' })
+    .then((estado) => {
+      estado.onchange = () => showAvisoAlarmas();
+    })
+    .catch(() => {});
+}
+
+// Texto del aviso según el permiso. Vacío si las alarmas pueden sonar
+function getTextoAvisoAlarmas(){
+  const permiso = getPermisoAlarmas();
+  if (permiso === 'denied') return 'Las notificaciones están bloqueadas para esta página y las alarmas no sonarán. Puedes permitirlas en los ajustes del sitio del navegador.';
+  if (permiso === 'archivo-local') return 'Las alarmas necesitan abrir la app con un servidor local (por ejemplo Live Server), no con doble clic en index.html.';
+  if (permiso === 'no-soportado') return 'Este navegador no admite notificaciones: las alarmas no sonarán.';
+  if (permiso === 'default') return 'Las alarmas necesitan tu permiso para avisarte.';
+  return '';
+}
+
+// Muestra u oculta el aviso de la Agenda y el del modal de evento
+function showAvisoAlarmas(){
+  const permiso = getPermisoAlarmas();
+  const texto = getTextoAvisoAlarmas();
+  const hayAlarmas = getEventos().some((evento) => evento.alarma !== null);
+
+  // En la Agenda solo se avisa si hay alguna alarma puesta
+  document.getElementById('aviso-alarmas').hidden = !hayAlarmas || texto === '';
+  document.getElementById('aviso-alarmas-texto').textContent = texto;
+  document.getElementById('aviso-alarmas-btn').hidden = permiso !== 'default';
+
+  // En el modal no hace falta avisar si aún no se ha preguntado: se pide al marcar "Poner alarma"
+  setErrorModal(document.getElementById('event-alarma-aviso'), permiso === 'default' ? '' : texto);
+}
+
+// Alarmas que ya han sonado hoy: { dia: 'Mon Oct 05 2026', claves: ['e1@08:55', ...] }.
+// Si el día guardado no es hoy se empieza de cero
+function getAlarmasDisparadas(dia){
+  const texto = localStorage.getItem('bitacora_alarmas_disparadas');
+  const datos = texto == null ? null : JSON.parse(texto);
+  if (datos === null || datos.dia !== dia) return { dia, claves: [] };
+  return datos;
+}
+
+function saveAlarmasDisparadas(datos){
+  localStorage.setItem('bitacora_alarmas_disparadas', JSON.stringify(datos));
+}
+
+// Lanza la notificación de un evento
+function notifyAlarma(evento){
+  const detalle = evento.hora ? `A las ${evento.hora}` : 'Sin hora fija';
+  const cuerpo = evento.duracion ? `${detalle} · ${evento.duracion}` : detalle;
+
+  try {
+    new Notification(`⏰ ${evento.titulo}`, { body: cuerpo, tag: `bitacora-${evento.id}` });
+  } catch (error) {
+    // Algunos navegadores móviles no permiten crear notificaciones sin service worker
+  }
+}
+
+// Comprueba si alguna alarma toca ahora: suena si su hora fue hace entre 0 y MINUTOS_MARGEN_ALARMA minutos
+// y todavía no ha sonado hoy. La clave id@hora hace que, si se cambia la hora de una alarma, pueda volver a sonar.
+// "ahora" se puede pasar a mano para probarla
+function checkAlarmas(ahora = new Date()){
+  if (getPermisoAlarmas() !== 'granted') return;
+
+  const minutosAhora = ahora.getHours() * 60 + ahora.getMinutes();
+  const disparadas = getAlarmasDisparadas(ahora.toDateString());
+  let huboNuevas = false;
+
+  getEventos().forEach((evento) => {
+    if (evento.alarma === null) return;
+
+    const [horas, minutos] = evento.alarma.split(':').map(Number);
+    const diferencia = minutosAhora - (horas * 60 + minutos);
+    const clave = `${evento.id}@${evento.alarma}`;
+
+    if (diferencia >= 0 && diferencia <= MINUTOS_MARGEN_ALARMA && !disparadas.claves.includes(clave)) {
+      notifyAlarma(evento);
+      disparadas.claves.push(clave);
+      huboNuevas = true;
+    }
+  });
+
+  if (huboNuevas) saveAlarmasDisparadas(disparadas);
+}
+
+document.getElementById('aviso-alarmas-btn').addEventListener('click', requestPermisoAlarmas);
 
 
 //Cambio de pantalla mostrando/ocultando cada sección.
@@ -1313,3 +1440,16 @@ function showTodo(){
 // Primero se añaden los proyectos de ejemplo que falten y después se pinta
 migrateProyectosNuevos();
 showTodo();
+
+// Alarmas: se comprueban al abrir y después cada 30 segundos
+checkAlarmas();
+setInterval(() => checkAlarmas(), 30 * 1000);
+watchPermisoAlarmas();
+
+// Al volver a la pestaña se revisa el permiso (por si se cambió en los ajustes) y si toca alguna alarma
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') {
+    showAvisoAlarmas();
+    checkAlarmas();
+  }
+});

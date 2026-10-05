@@ -36,6 +36,12 @@
         <button id="add-event-btn" class="badge badge-add">+ Evento</button>
       </header>
 
+      <!-- Aviso discreto si las alarmas no pueden sonar (permiso no dado, bloqueado o sin soporte) -->
+      <div class="aviso-alarmas" id="aviso-alarmas" hidden>
+        <span id="aviso-alarmas-texto"></span>
+        <button class="aviso-alarmas-btn" id="aviso-alarmas-btn" hidden>Activar avisos</button>
+      </div>
+
       <section class="agenda-list" id="agenda-list"></section>
     </main>
 
@@ -122,6 +128,8 @@
       <label class="modal-field" id="event-alarma-field" hidden>
         Hora de la alarma
         <input type="time" id="event-alarma">
+        <span class="modal-nota">Solo suena con Bitácora abierta en una pestaña del navegador.</span>
+        <span class="modal-aviso" id="event-alarma-aviso" hidden></span>
       </label>
 
       <p class="modal-error" id="event-modal-error" hidden></p>
