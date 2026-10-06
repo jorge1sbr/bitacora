@@ -2,7 +2,6 @@
 
 Aplicación web personal para organizar proyectos y la agenda del día. Está hecha con HTML, CSS y JavaScript puro: sin frameworks, sin dependencias y sin paso de build. Los datos se guardan en el `localStorage` del navegador.
 
-<!-- CAPTURA: imagen principal. Las tres pantallas una al lado de otra (Proyectos, Agenda, Perfil), o un GIF corto navegando entre ellas con la barra inferior. -->
 ![Bitácora: pantallas de Proyectos, Agenda y Perfil](docs/capturas/portada.png)
 
 ## Qué hace
@@ -17,7 +16,6 @@ Tres pantallas, con navegación en la parte inferior.
 - Menú `+` para añadir una tarea o una subcarpeta. Menú `⋯` para editar o borrar.
 - Las tareas hechas se tachan y guardan la fecha en que se completaron.
 
-<!-- CAPTURA: pantalla Proyectos con DP-900 desplegado (varios niveles de carpetas), alguna tarea tachada y el menú "+" o "⋯" abierto. -->
 ![Pantalla Proyectos](docs/capturas/proyectos.png)
 
 ### Agenda
@@ -27,7 +25,6 @@ Tres pantallas, con navegación en la parte inferior.
 - La cabecera muestra la fecha de hoy y el número de eventos.
 - Las alarmas usan las notificaciones del navegador.
 
-<!-- CAPTURA: pantalla Agenda con eventos de varios colores, uno sin hora fija y el icono de alarma visible. Opcional: el modal "Nuevo evento" abierto. -->
 ![Pantalla Agenda](docs/capturas/agenda.png)
 
 ### Perfil
@@ -38,11 +35,7 @@ Tres pantallas, con navegación en la parte inferior.
 - "Desde <mes año>": la fecha del primer uso.
 - Copia de seguridad: **Exportar JSON** descarga un archivo con todos los datos. **Importar JSON** valida el archivo y pide confirmación antes de cargarlo, porque sustituye todos los datos actuales.
 
-<!-- CAPTURA: pantalla Perfil con el porcentaje grande, las tres tarjetas de estadísticas, el progreso por proyecto y los botones de copia de seguridad. -->
 ![Pantalla Perfil](docs/capturas/perfil.png)
-
-<!-- CAPTURA: la app en un móvil real o en el modo responsive del navegador (ancho ~390 px), pantalla Proyectos o Agenda. -->
-![Bitácora en el móvil](docs/capturas/movil.png)
 
 ## Cómo se usa
 
